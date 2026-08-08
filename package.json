@@ -18,12 +18,12 @@
     "ws": "^8.21.3"
   },
   "devDependencies": {
-    "electron": "^30.5.1",
+    "electron": "^43.3.0",
     "electron-builder": "^24.13.3"
   },
   "build": {
     "appId": "com.beatsync.app",
-    "productName": "BeatSync",
+    "productName": "beatsync",
     "directories": {
       "output": "dist"
     },
