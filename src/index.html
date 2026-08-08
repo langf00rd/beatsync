@@ -10,11 +10,10 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <!-- auth view -->
+    <!-- ── auth view ─────────────────────────────────────── -->
     <main id="auth-view" class="view">
       <div class="auth-card">
         <div class="brand">
-          <div class="brand-mark">BS</div>
           <h1>beatsync</h1>
           <p class="tagline">your scripts, backed up to the cloud.</p>
         </div>
@@ -79,103 +78,132 @@
       </div>
     </main>
 
-    <!-- main view -->
+    <!-- ── main view ─────────────────────────────────────── -->
     <main id="main-view" class="view hidden">
+      <!-- topbar -->
       <header class="topbar">
         <div class="brand small">
-          <div class="brand-mark">BS</div>
           <span>beatsync</span>
         </div>
         <div class="topbar-right">
           <span id="user-email" class="user-email"></span>
+          <!-- settings toggle -->
+          <button
+            id="settings-toggle"
+            class="btn ghost"
+            aria-expanded="false"
+            aria-controls="settings-drawer"
+          >
+            settings
+          </button>
           <button id="sign-out" class="btn ghost">sign out</button>
         </div>
       </header>
 
-      <section class="panel">
-        <div class="panel-head">
-          <h2>encryption</h2>
-          <span id="enc-status" class="status" data-state="idle">
-            <span class="dot"></span>
-            <span id="enc-status-text">no key</span>
-          </span>
+      <!-- ── settings drawer (hidden by default) ─────────── -->
+      <div
+        id="settings-drawer"
+        class="settings-drawer hidden"
+        role="region"
+        aria-label="settings"
+      >
+        <div class="settings-section">
+          <h3 class="settings-heading">sync folder</h3>
+          <div class="dir-row">
+            <input
+              type="text"
+              id="dir-input"
+              placeholder="choose a folder…"
+              readonly
+            />
+            <button id="choose-dir" class="btn secondary">choose folder</button>
+            <button id="start-sync" class="btn primary">start watching</button>
+            <button id="stop-sync" class="btn danger hidden">stop</button>
+          </div>
+          <details class="advanced">
+            <summary>file types to watch</summary>
+            <div class="ext-row">
+              <input
+                type="text"
+                id="extensions-input"
+                placeholder=".fountain,.txt"
+                value=".fountain"
+              />
+              <span class="hint">comma-separated extensions</span>
+            </div>
+          </details>
         </div>
-        <p class="hint">
-          documents are encrypted before they leave this machine and decrypted
-          on the way back, so the server only ever stores ciphertext. your key
-          is saved in the os keychain and never sent anywhere. on a new device,
-          paste the key you saved when you first set up beatsync — a different
-          key won't unlock your documents, and if you lose it, they can't be
-          recovered.
-        </p>
-        <div class="enc-row">
-          <input
-            type="password"
-            id="enc-key-input"
-            placeholder="paste your key here…"
-            autocomplete="off"
-          />
-          <button id="enc-generate" class="btn secondary">generate key</button>
-          <button id="enc-save" class="btn primary">save key</button>
-          <button id="enc-clear" class="btn danger hidden">clear key</button>
-        </div>
-        <div id="enc-generated" class="enc-generated hidden">
+
+        <div class="settings-divider"></div>
+
+        <div class="settings-section">
+          <h3 class="settings-heading">
+            encryption
+            <span id="enc-status" class="status" data-state="idle">
+              <span class="dot"></span>
+              <span id="enc-status-text">no key</span>
+            </span>
+          </h3>
           <p class="hint">
-            new key generated — copy it somewhere safe now. it won't be shown
-            again once you leave this screen.
+            your documents are encrypted before they leave your computer, so
+            your files stay private and secure. We never store or have access to
+            your encryption key. Please keep your key somewhere safe. If you
+            lose it, you’ll lose access to your stored documents, and we won’t
+            be able to recover them for you.
           </p>
           <div class="enc-row">
-            <input type="text" id="enc-generated-value" readonly />
-            <button id="enc-copy" class="btn ghost small">copy</button>
+            <input
+              type="password"
+              id="enc-key-input"
+              placeholder="paste your key here…"
+              autocomplete="off"
+            />
+            <button id="enc-generate" class="btn secondary">
+              generate new key
+            </button>
+            <button id="enc-save" class="btn primary">save key</button>
+            <button id="enc-clear" class="btn danger hidden">clear key</button>
           </div>
+          <div id="enc-generated" class="enc-generated hidden">
+            <p class="hint warning">
+              copy this somewhere safe — it won't be shown again.
+            </p>
+            <div class="enc-row">
+              <input type="text" id="enc-generated-value" readonly />
+              <button id="enc-copy" class="btn ghost small">copy</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- /settings-drawer -->
+
+      <!-- ── status hero ───────────────────────────────────── -->
+      <section class="hero-status">
+        <div class="hero-inner">
+          <div class="sync-state" id="sync-state" data-state="idle">
+            <span class="sync-dot"></span>
+            <span id="sync-label" class="sync-label">not watching</span>
+          </div>
+          <p id="sync-meta" class="sync-meta"></p>
         </div>
       </section>
 
-      <section class="panel">
+      <!-- ── activity log ──────────────────────────────────── -->
+      <section class="panel" id="panel-log">
         <div class="panel-head">
-          <h2>sync folder</h2>
-          <div class="status" id="status" data-state="idle">
-            <span class="dot"></span>
-            <span id="status-text">not watching</span>
-          </div>
+          <h2>activity</h2>
         </div>
-
-        <div class="dir-row">
-          <input
-            type="text"
-            id="dir-input"
-            placeholder="choose a folder…"
-            readonly
-          />
-          <button id="choose-dir" class="btn secondary">choose folder</button>
-          <button id="start-sync" class="btn primary">start watching</button>
-          <button id="stop-sync" class="btn danger hidden">stop</button>
-        </div>
-
-        <details class="advanced">
-          <summary>advanced — file types to watch</summary>
-          <div class="ext-row">
-            <input
-              type="text"
-              id="extensions-input"
-              placeholder=".fountain,.txt"
-              value=".fountain"
-            />
-            <span class="hint">comma-separated extensions</span>
-          </div>
-        </details>
-
         <div class="log-box" id="log-box"></div>
       </section>
 
-      <section class="panel">
+      <!-- ── cloud files ───────────────────────────────────── -->
+      <section class="panel" id="panel-files">
         <div class="panel-head">
-          <h2>files in the cloud</h2>
+          <h2>your files</h2>
           <button id="refresh-files" class="btn ghost small">refresh</button>
         </div>
         <p id="files-empty" class="empty hidden">
-          no files yet. pick a folder and start watching — changes will appear
-          here.
+          no files yet — pick a folder in settings and start watching.
         </p>
         <table class="files" id="files-table">
           <thead>

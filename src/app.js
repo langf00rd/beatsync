@@ -20,8 +20,9 @@ const chooseDirBtn = $("choose-dir");
 const startSyncBtn = $("start-sync");
 const stopSyncBtn = $("stop-sync");
 const extensionsInput = $("extensions-input");
-const statusEl = $("status");
-const statusText = $("status-text");
+const syncState = $("sync-state");
+const syncLabel = $("sync-label");
+const syncMeta = $("sync-meta");
 const logBox = $("log-box");
 const refreshFilesBtn = $("refresh-files");
 const filesEmpty = $("files-empty");
@@ -126,7 +127,9 @@ authForm.addEventListener("submit", async (e) => {
 function withTimeout(promise, ms, message) {
   return Promise.race([
     promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error(message)), ms)),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(message)), ms),
+    ),
   ]);
 }
 
@@ -358,8 +361,17 @@ function renderFiles() {
 // ---------------------------------------------------------------------------
 
 function setStatus(state, text) {
-  statusEl.dataset.state = state;
-  statusText.textContent = text;
+  syncState.dataset.state = state;
+  if (state === "watching") {
+    syncLabel.textContent = "watching";
+    syncMeta.textContent = dirInput.value || "";
+  } else if (state === "error") {
+    syncLabel.textContent = "error";
+    syncMeta.textContent = text;
+  } else {
+    syncLabel.textContent = "not watching";
+    syncMeta.textContent = "";
+  }
 }
 
 function resetToIdle() {
@@ -437,3 +449,13 @@ async function syncUiFromMain() {
     resetToIdle();
   }
 }
+
+const settingsToggle = document.getElementById("settings-toggle");
+const settingsDrawer = document.getElementById("settings-drawer");
+
+settingsToggle.addEventListener("click", () => {
+  const isOpen = settingsDrawer.classList.toggle("open");
+  settingsToggle.setAttribute("aria-expanded", String(isOpen));
+  // remove .hidden on first open (it starts hidden via class, then CSS handles show/hide)
+  settingsDrawer.classList.remove("hidden");
+});
