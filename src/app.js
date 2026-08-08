@@ -415,7 +415,25 @@ function formatTime(iso) {
   const restored = await api.restoreSession();
   if (restored.ok) {
     showMain(restored.session.email);
+    // resume watching from the last session if possible, then sync the
+    // controls with whatever state the main process is actually in (the
+    // watcher may already be running from a previous launch or the tray).
+    await api.autoResume();
+    await syncUiFromMain();
   } else {
     showAuth();
   }
 })();
+
+async function syncUiFromMain() {
+  const status = await api.getSyncStatus();
+  if (status.watching) {
+    watching = true;
+    dirInput.value = status.watchDir ?? dirInput.value;
+    startSyncBtn.classList.add("hidden");
+    stopSyncBtn.classList.remove("hidden");
+    setStatus("watching", "watching");
+  } else {
+    resetToIdle();
+  }
+}

@@ -1,4 +1,13 @@
-const { app, BrowserWindow, dialog, ipcMain, safeStorage } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  safeStorage,
+  Tray,
+  Menu,
+  nativeImage,
+} = require("electron");
 const path = require("node:path");
 const fs = require("node:fs");
 const { createClient } = require("@supabase/supabase-js");
@@ -28,6 +37,8 @@ let syncClient = null;
 let watcher = null;
 let watchDir = null;
 let encryptionKey = null;
+let tray = null;
+let isQuitting = false;
 
 const statePath = () => path.join(app.getPath("userData"), "state.json");
 const sessionPath = () => path.join(app.getPath("userData"), "session.json");
@@ -76,7 +87,104 @@ function createWindow() {
   });
 
   mainWindow.loadFile(path.join(__dirname, "index.html"));
+
+  // closing the window hides it to the menu bar instead of stopping the sync:
+  // beatsync keeps watching in the background and the tray "open beatsync"
+  // item brings the window back. only a real quit (cmd+q / tray quit) closes it.
+  mainWindow.on("close", (event) => {
+    if (!isQuitting) {
+      event.preventDefault();
+      mainWindow.hide();
+    }
+  });
+
   mainWindow.on("closed", () => (mainWindow = null));
+}
+
+function showMainWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    createWindow();
+  } else {
+    mainWindow.show();
+    mainWindow.focus();
+  }
+}
+
+const trayIconPath = () => path.join(__dirname, "..", "assets", "trayTemplate.png");
+
+function buildTrayMenu() {
+  const watching = !!watcher;
+  const statusLabel = watching
+    ? `running — watching ${watchDir}`
+    : "running — not watching";
+
+  const items = [
+    { label: statusLabel, enabled: false },
+    { type: "separator" },
+  ];
+
+  if (watching) {
+    items.push({
+      label: "stop watching",
+      click: () => {
+        stopWatching();
+        saveState({});
+      },
+    });
+  } else {
+    items.push({ label: "start watching", click: trayStartWatching });
+  }
+
+  items.push(
+    { type: "separator" },
+    { label: "open beatsync", click: showMainWindow },
+    { label: "quit beatsync", click: () => app.quit() },
+  );
+
+  return Menu.buildFromTemplate(items);
+}
+
+function updateTrayMenu() {
+  if (!tray) return;
+  tray.setContextMenu(buildTrayMenu());
+  tray.setToolTip(watchingLabel());
+}
+
+function watchingLabel() {
+  return watcher ? `beatsync — watching ${watchDir}` : "beatsync — not watching";
+}
+
+function createTray() {
+  const icon = nativeImage.createFromPath(trayIconPath());
+  icon.setTemplateImage(true);
+  tray = new Tray(icon);
+  tray.on("click", () => tray.popUpContextMenu(buildTrayMenu()));
+  updateTrayMenu();
+}
+
+async function trayStartWatching() {
+  try {
+    const saved = loadState();
+    let dir = watchDir || saved.watchDir;
+    if (!dir) {
+      const result = await dialog.showOpenDialog({
+        title: "choose your scripts folder",
+        properties: ["openDirectory", "createDirectory"],
+      });
+      if (result.canceled || result.filePaths.length === 0) return;
+      dir = result.filePaths[0];
+    }
+    await startWatchingFlow({ dir, extensions: saved.extensions });
+    sendLog(`watching ${dir} — started from the menu bar.`);
+  } catch (err) {
+    const { response } = await dialog.showMessageBox({
+      type: "warning",
+      title: "beatsync",
+      message: err.message,
+      buttons: ["open beatsync", "ok"],
+    });
+    if (response === 0) showMainWindow();
+  }
 }
 
 // file-backed storage adapter so supabase-js persists (and auto-refreshes)
@@ -289,6 +397,7 @@ function startWatching(dir, extensions) {
 
   watcher.start();
   sendToRenderer("watcher-started", { rootDir: dir, extensions });
+  updateTrayMenu();
 }
 
 function stopWatching() {
@@ -297,6 +406,57 @@ function stopWatching() {
     watcher = null;
   }
   sendToRenderer("watcher-stopped", {});
+  updateTrayMenu();
+}
+
+// the shared start sequence used by both the window's "start watching" button
+// and the menu-bar tray item. verifies the key fingerprint before touching any
+// document, pulls anything missing, then starts the watcher.
+async function startWatchingFlow({ dir, extensions }) {
+  if (!fs.existsSync(dir)) {
+    throw new Error("that folder no longer exists. please pick it again.");
+  }
+
+  const extList = extensions?.length ? extensions : CONFIG.defaultExtensions;
+  if (!supabase || !userId) {
+    throw new Error("not signed in. please sign in first.");
+  }
+  if (!encryptionKey) {
+    throw new Error(
+      "no encryption key set — generate or paste one in the encryption section first.",
+    );
+  }
+
+  // reject a wrong key before touching any document: the stored fingerprint
+  // tells us which key encrypted this user's docs. a device without the
+  // original key must not be able to read or write them.
+  const fp = keyFingerprint(encryptionKey);
+  const storedFp = await storedKeyFingerprint();
+  if (storedFp && storedFp !== fp) {
+    throw new Error(
+      "this device's encryption key doesn't match the one that encrypted your documents. " +
+        "to read and write your documents, you need the original key — a new key can't open them.",
+    );
+  }
+
+  syncClient = new SupabaseSyncClient(supabase, userId, encryptionKey);
+  const { pulled, migrated } = await syncClient.pullMissingFiles(dir);
+  if (pulled > 0) {
+    sendLog(`pulled ${pulled} file(s) from beatsync cloud`);
+  }
+  if (migrated > 0) {
+    sendLog(`re-encrypted ${migrated} legacy file(s)`);
+  }
+
+  // first successful sync (or a legacy account with no fingerprint yet):
+  // only now is this key proven to be the right one, so stamp it.
+  if (!storedFp) {
+    await storeKeyFingerprint(fp);
+  }
+
+  startWatching(dir, extList);
+  saveState({ watchDir: dir, extensions: extList });
+  return { pulled };
 }
 
 function sendLog(message) {
@@ -348,54 +508,39 @@ ipcMain.handle("auth:signOut", async () => {
 
 ipcMain.handle("sync:start", async (_event, { dir, extensions }) => {
   try {
-    if (!fs.existsSync(dir)) {
-      throw new Error("that folder no longer exists. please pick it again.");
-    }
-
-    const extList = extensions?.length ? extensions : CONFIG.defaultExtensions;
-    if (!supabase || !userId) {
-      throw new Error("not signed in. please sign in first.");
-    }
-    if (!encryptionKey) {
-      throw new Error(
-        "no encryption key set — generate or paste one in the encryption section first.",
-      );
-    }
-
-    // reject a wrong key before touching any document: the stored fingerprint
-    // tells us which key encrypted this user's docs. a device without the
-    // original key must not be able to read or write them.
-    const fp = keyFingerprint(encryptionKey);
-    const storedFp = await storedKeyFingerprint();
-    if (storedFp && storedFp !== fp) {
-      throw new Error(
-        "this device's encryption key doesn't match the one that encrypted your documents. " +
-          "to read and write your documents, you need the original key — a new key can't open them.",
-      );
-    }
-
-    syncClient = new SupabaseSyncClient(supabase, userId, encryptionKey);
-    const { pulled, migrated } = await syncClient.pullMissingFiles(dir);
-    if (pulled > 0) {
-      sendLog(`pulled ${pulled} file(s) from beatsync cloud`);
-    }
-    if (migrated > 0) {
-      sendLog(`re-encrypted ${migrated} legacy file(s)`);
-    }
-
-    // first successful sync (or a legacy account with no fingerprint yet):
-    // only now is this key proven to be the right one, so stamp it.
-    if (!storedFp) {
-      await storeKeyFingerprint(fp);
-    }
-
-    startWatching(dir, extList);
-    saveState({ watchDir: dir, extensions: extList });
+    const { pulled } = await startWatchingFlow({ dir, extensions });
     return { ok: true, pulled };
   } catch (err) {
     return { ok: false, error: err.message };
   }
 });
+
+ipcMain.handle("sync:autoResume", async () => {
+  const saved = loadState();
+  if (!saved.watchDir) return { ok: true, resumed: false };
+  if (!supabase || !userId) return { ok: true, resumed: false };
+  if (!encryptionKey) return { ok: true, resumed: false };
+  try {
+    const { pulled } = await startWatchingFlow({
+      dir: saved.watchDir,
+      extensions: saved.extensions,
+    });
+    if (pulled > 0) {
+      sendLog(`pulled ${pulled} file(s) from beatsync cloud`);
+    }
+    return { ok: true, resumed: true };
+  } catch (err) {
+    sendLog(`auto-resume failed: ${err.message}`);
+    return { ok: false, error: err.message };
+  }
+});
+
+ipcMain.handle("sync:getStatus", () => ({
+  watching: !!watcher,
+  watchDir: watcher ? watchDir : null,
+  signedIn: !!supabase && !!userId,
+  hasKey: !!encryptionKey,
+}));
 
 ipcMain.handle("sync:stop", async () => {
   stopWatching();
@@ -541,14 +686,24 @@ app.whenReady().then(() => {
   } catch {
     encryptionKey = null;
   }
+  if (process.platform === "win32") app.setAppUserModelId("com.beatsync.app");
   createWindow();
+  createTray();
 
   app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    } else if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.show();
+    }
   });
 });
 
-app.on("window-all-closed", () => {
+app.on("before-quit", () => {
+  isQuitting = true;
   if (watcher) stopWatching();
+});
+
+app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });

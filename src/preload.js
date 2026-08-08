@@ -8,6 +8,8 @@ contextBridge.exposeInMainWorld("beatsync", {
 
   startSync: (options) => ipcRenderer.invoke("sync:start", options),
   stopSync: () => ipcRenderer.invoke("sync:stop"),
+  autoResume: () => ipcRenderer.invoke("sync:autoResume"),
+  getSyncStatus: () => ipcRenderer.invoke("sync:getStatus"),
   listDocuments: () => ipcRenderer.invoke("sync:listDocuments"),
   getConfig: () => ipcRenderer.invoke("config:get"),
 
