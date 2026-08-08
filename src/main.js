@@ -79,6 +79,8 @@ function saveState(state) {
 }
 
 function createWindow() {
+  const icon = nativeImage.createFromPath(appIconPath());
+
   mainWindow = new BrowserWindow({
     width: 1000,
     height: 720,
@@ -86,6 +88,7 @@ function createWindow() {
     minHeight: 500,
     title: "beatsync",
     backgroundColor: "#0f1115",
+    icon,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -118,8 +121,7 @@ function showMainWindow() {
   }
 }
 
-const trayIconPath = () =>
-  path.join(__dirname, "..", "assets", "trayTemplate.png");
+const appIconPath = () => path.join(__dirname, "..", "assets", "logo.png");
 
 function buildTrayMenu() {
   const watching = !!watcher;
@@ -163,7 +165,9 @@ function watchingLabel() {
 }
 
 function createTray() {
-  const icon = nativeImage.createFromPath(trayIconPath());
+  const icon = nativeImage.createFromPath(
+    path.join(__dirname, "..", "assets", "trayTemplate.png"),
+  );
   icon.setTemplateImage(true);
   tray = new Tray(icon);
   tray.on("click", () => tray.popUpContextMenu(buildTrayMenu()));
