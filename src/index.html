@@ -25,6 +25,30 @@
         </div>
 
         <form id="auth-form">
+          <div id="name-fields" class="name-fields hidden">
+            <label class="field">
+              <span>first name</span>
+              <input
+                type="text"
+                id="first-name"
+                name="firstName"
+                placeholder="jane"
+                required
+                autocomplete="given-name"
+              />
+            </label>
+            <label class="field">
+              <span>last name</span>
+              <input
+                type="text"
+                id="last-name"
+                name="lastName"
+                placeholder="doe"
+                required
+                autocomplete="family-name"
+              />
+            </label>
+          </div>
           <label class="field">
             <span>email</span>
             <input

@@ -97,16 +97,20 @@ function createAppClient() {
   });
 }
 
-async function authenticate({ email, password, signUp }) {
+async function authenticate({ email, password, signUp, firstName, lastName }) {
   const client = createAppClient();
 
   let data, error;
   if (signUp) {
-    ({ data, error } = await client.auth.signUp({ email, password }));
+    ({ data, error } = await client.auth.signUp({
+      email,
+      password,
+      options: { data: { first_name: firstName, last_name: lastName } },
+    }));
     if (error) throw new Error(error.message);
     if (!data.session) {
       throw new Error(
-        "Account created! Please check your email to confirm, then sign in.",
+        "account created! please check your email to confirm, then sign in.",
       );
     }
   } else {
@@ -121,6 +125,29 @@ async function authenticate({ email, password, signUp }) {
   // sign-in, and autoRefreshToken keeps it fresh across restarts.
   supabase = client;
   userId = data.user.id;
+
+  // keep the app-level profile row in sync: names come from the signup form
+  // (or persisted user metadata), last_login is stamped on every sign-in.
+  const meta = data.user.user_metadata ?? {};
+  const profile = {
+    id: userId,
+    email: data.user.email ?? email,
+    last_login: new Date().toISOString(),
+  };
+  if (signUp) {
+    profile.first_name = firstName ?? meta.first_name ?? "";
+    profile.last_name = lastName ?? meta.last_name ?? "";
+  } else if (meta.first_name || meta.last_name) {
+    profile.first_name = meta.first_name ?? "";
+    profile.last_name = meta.last_name ?? "";
+  }
+
+  try {
+    await client.from("profiles").upsert(profile, { onConflict: "id" });
+  } catch (err) {
+    sendLog(`failed to update profile: ${err.message}`);
+  }
+
   return { email: data.user.email ?? email };
 }
 

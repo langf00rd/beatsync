@@ -5,6 +5,9 @@ const $ = (id) => document.getElementById(id);
 const authView = $("auth-view");
 const mainView = $("main-view");
 const authForm = $("auth-form");
+const firstNameInput = $("first-name");
+const lastNameInput = $("last-name");
+const nameFields = $("name-fields");
 const emailInput = $("email");
 const passwordInput = $("password");
 const authError = $("auth-error");
@@ -49,6 +52,7 @@ tabs.forEach((tab) => {
     tabs.forEach((t) => t.classList.remove("active"));
     tab.classList.add("active");
     authMode = tab.dataset.tab;
+    nameFields.classList.toggle("hidden", authMode !== "signup");
     authError.classList.add("hidden");
     authSubmit.textContent =
       authMode === "signup" ? "create account" : "sign in";
@@ -64,9 +68,19 @@ authForm.addEventListener("submit", async (e) => {
     password: passwordInput.value,
   };
 
-  if (authMode === "signup" && credentials.password.length < 6) {
-    showAuthError("password must be at least 6 characters.");
-    return;
+  if (authMode === "signup") {
+    const firstName = firstNameInput.value.trim();
+    const lastName = lastNameInput.value.trim();
+    if (!firstName || !lastName) {
+      showAuthError("please enter your first and last name.");
+      return;
+    }
+    if (credentials.password.length < 6) {
+      showAuthError("password must be at least 6 characters.");
+      return;
+    }
+    credentials.firstName = firstName;
+    credentials.lastName = lastName;
   }
 
   authSubmit.disabled = true;

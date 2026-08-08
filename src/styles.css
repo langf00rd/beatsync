@@ -120,6 +120,16 @@ body {
   margin-bottom: 6px;
 }
 
+.name-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.name-fields .field {
+  margin-bottom: 0;
+}
+
 input[type="email"],
 input[type="password"],
 input[type="text"] {
