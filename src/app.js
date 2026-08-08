@@ -26,6 +26,15 @@ const logBox = $("log-box");
 const refreshFilesBtn = $("refresh-files");
 const filesEmpty = $("files-empty");
 const filesBody = $("files-body");
+const encStatus = $("enc-status");
+const encStatusText = $("enc-status-text");
+const encKeyInput = $("enc-key-input");
+const encGenerateBtn = $("enc-generate");
+const encSaveBtn = $("enc-save");
+const encClearBtn = $("enc-clear");
+const encGenerated = $("enc-generated");
+const encGeneratedValue = $("enc-generated-value");
+const encCopyBtn = $("enc-copy");
 
 let authMode = "signin";
 let watching = false;
@@ -44,6 +53,7 @@ function showMain(email) {
   userEmail.textContent = email;
   authView.classList.add("hidden");
   mainView.classList.remove("hidden");
+  initEncryption();
   refreshDocuments();
 }
 
@@ -68,6 +78,11 @@ authForm.addEventListener("submit", async (e) => {
     password: passwordInput.value,
   };
 
+  if (emailInput.validity.typeMismatch) {
+    showAuthError("please enter a valid email address.");
+    return;
+  }
+
   if (authMode === "signup") {
     const firstName = firstNameInput.value.trim();
     const lastName = lastNameInput.value.trim();
@@ -86,21 +101,34 @@ authForm.addEventListener("submit", async (e) => {
   authSubmit.disabled = true;
   authSubmit.textContent = "please wait…";
 
-  const result =
-    authMode === "signup"
-      ? await api.signUp(credentials)
-      : await api.signIn(credentials);
+  try {
+    const result = await withTimeout(
+      authMode === "signup" ? api.signUp(credentials) : api.signIn(credentials),
+      20000,
+      "the request timed out — check your internet connection and try again.",
+    );
 
-  authSubmit.disabled = false;
-  authSubmit.textContent = authMode === "signup" ? "create account" : "sign in";
+    if (!result.ok) {
+      showAuthError(result.error);
+      return;
+    }
 
-  if (!result.ok) {
-    showAuthError(result.error);
-    return;
+    showMain(result.session.email);
+  } catch (err) {
+    showAuthError(err?.message ?? "something went wrong, please try again.");
+  } finally {
+    authSubmit.disabled = false;
+    authSubmit.textContent =
+      authMode === "signup" ? "create account" : "sign in";
   }
-
-  showMain(result.session.email);
 });
+
+function withTimeout(promise, ms, message) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(message)), ms)),
+  ]);
+}
 
 function showAuthError(message) {
   authError.textContent = message;
@@ -111,6 +139,89 @@ signOutBtn.addEventListener("click", async () => {
   await api.signOut();
   resetToIdle();
   showAuth();
+});
+
+// ---------------------------------------------------------------------------
+// encryption
+// ---------------------------------------------------------------------------
+
+async function initEncryption() {
+  const { hasKey, matches } = await api.encryption.getStatus();
+  if (!hasKey) {
+    setEncStatus("none");
+  } else if (matches === false) {
+    setEncStatus("mismatch");
+  } else {
+    setEncStatus("saved");
+  }
+  encClearBtn.classList.toggle("hidden", !hasKey);
+}
+
+function setEncStatus(state) {
+  if (state === "saved") {
+    encStatus.dataset.state = "ok";
+    encStatusText.textContent = "key saved";
+  } else if (state === "mismatch") {
+    encStatus.dataset.state = "error";
+    encStatusText.textContent = "key mismatch — enter your key";
+  } else {
+    encStatus.dataset.state = "idle";
+    encStatusText.textContent = "no key";
+  }
+}
+
+encGenerateBtn.addEventListener("click", async () => {
+  const { key } = await api.encryption.generate();
+  encKeyInput.value = key;
+  encGeneratedValue.value = key;
+  encGenerated.classList.remove("hidden");
+});
+
+encCopyBtn.addEventListener("click", async () => {
+  const value = encGeneratedValue.value;
+  try {
+    await navigator.clipboard.writeText(value);
+  } catch {
+    const ta = document.createElement("textarea");
+    ta.value = value;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+  }
+  addLog("key copied to clipboard", "synced");
+});
+
+encSaveBtn.addEventListener("click", async () => {
+  const key = encKeyInput.value.trim();
+  if (!key) {
+    addLog("paste or generate a key first", "error");
+    return;
+  }
+  const result = await api.encryption.set(key);
+  if (!result.ok) {
+    addLog(result.error, "error");
+    return;
+  }
+  encKeyInput.value = "";
+  encGenerated.classList.add("hidden");
+  await initEncryption();
+  refreshDocuments();
+  addLog("encryption key saved", "synced");
+});
+
+encClearBtn.addEventListener("click", async () => {
+  if (
+    !window.confirm(
+      "clear the encryption key? documents already in the cloud stay encrypted and can only be read with this key.",
+    )
+  ) {
+    return;
+  }
+  await api.encryption.clear();
+  encClearBtn.classList.add("hidden");
+  setEncStatus("none");
+  addLog("encryption key cleared");
 });
 
 // ---------------------------------------------------------------------------
@@ -143,6 +254,7 @@ startSyncBtn.addEventListener("click", async () => {
   startSyncBtn.textContent = "start Watching";
 
   if (!result.ok) {
+    addLog(result.error, "error");
     setStatus("error", result.error);
     return;
   }

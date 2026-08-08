@@ -1,14 +1,25 @@
-const { app, BrowserWindow, dialog, ipcMain } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, safeStorage } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs");
 const { createClient } = require("@supabase/supabase-js");
 const { WebSocket } = require("ws");
 const { SupabaseSyncClient } = require("./sync.js");
 const { DirectoryWatcher } = require("./watcher");
+const { generateKey, normalizeKey, fingerprint, isEncrypted, decrypt } = require("./crypto");
 
 // credentials are written into config.generated.js by scripts/inject-config.js
 // (which reads the repo root .env) so end users never configure anything.
 const CONFIG = require("./config.generated.js");
+
+// network calls against supabase get a hard timeout so a stalled connection
+// fails with a clear error instead of hanging the sign-in/sync forever.
+const REQUEST_TIMEOUT_MS = 15000;
+
+function timedFetch(input, init) {
+  const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+  const signal = init?.signal ? AbortSignal.any([init.signal, timeout]) : timeout;
+  return fetch(input, { ...init, signal });
+}
 
 let mainWindow = null;
 let supabase = null;
@@ -16,9 +27,12 @@ let userId = null;
 let syncClient = null;
 let watcher = null;
 let watchDir = null;
+let encryptionKey = null;
 
 const statePath = () => path.join(app.getPath("userData"), "state.json");
 const sessionPath = () => path.join(app.getPath("userData"), "session.json");
+const encryptionKeyPath = () =>
+  path.join(app.getPath("userData"), "encryption-key.bin");
 
 function loadJson(file) {
   try {
@@ -86,6 +100,7 @@ const sessionStorage = {
 
 function createAppClient() {
   return createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey, {
+    fetch: timedFetch,
     auth: {
       persistSession: true,
       autoRefreshToken: true,
@@ -180,13 +195,79 @@ function clearSession() {
   } catch {}
 }
 
+// the encryption key never touches supabase — it is stored encrypted by the
+// os keychain (macOS keychain, windows dpapi, linux libsecret) via electron's
+// safeStorage, so the app can decrypt documents without the server ever
+// seeing the key or the plaintext.
+function loadEncryptionKey() {
+  try {
+    if (!fs.existsSync(encryptionKeyPath())) return null;
+    if (!safeStorage.isEncryptionAvailable()) return null;
+    return safeStorage.decryptString(fs.readFileSync(encryptionKeyPath()));
+  } catch {
+    return null;
+  }
+}
+
+function saveEncryptionKey(key) {
+  if (!safeStorage.isEncryptionAvailable()) {
+    throw new Error("secure key storage is not available on this machine.");
+  }
+  fs.writeFileSync(encryptionKeyPath(), safeStorage.encryptString(key));
+}
+
+function clearEncryptionKey() {
+  try {
+    fs.unlinkSync(encryptionKeyPath());
+  } catch {}
+}
+
+// the device key's server-side fingerprint (see crypto.fingerprint): used to
+// detect a wrong key before any document is decrypted or written.
+function keyFingerprint(key) {
+  return fingerprint(key);
+}
+
+// returns the stored key fingerprint for the signed-in user, or null when the
+// user has never synced with a key (fresh account or pre-fingerprint legacy).
+async function storedKeyFingerprint() {
+  if (!supabase || !userId) return null;
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("key_hash")
+    .eq("id", userId)
+    .maybeSingle();
+  if (error) throw keyCheckError(error);
+  return data?.key_hash ?? null;
+}
+
+async function storeKeyFingerprint(fp) {
+  if (!supabase || !userId) return;
+  const { error } = await supabase
+    .from("profiles")
+    .update({ key_hash: fp })
+    .eq("id", userId);
+  if (error) throw keyCheckError(error);
+}
+
+// maps postgrest errors to a clear message; "column does not exist" (42703)
+// means schema.sql hasn't been applied to the project yet.
+function keyCheckError(error) {
+  if (error.code === "42703") {
+    return new Error(
+      "the database is missing the encryption key column — run the latest schema.sql in the supabase sql editor.",
+    );
+  }
+  return new Error(`failed to verify encryption key: ${error.message}`);
+}
+
 function startWatching(dir, extensions) {
   if (watcher) {
     watcher.stop();
     watcher = null;
   }
 
-  syncClient = syncClient ?? new SupabaseSyncClient(supabase, userId);
+  syncClient = syncClient ?? new SupabaseSyncClient(supabase, userId, encryptionKey);
   watchDir = dir;
 
   watcher = new DirectoryWatcher({
@@ -275,10 +356,37 @@ ipcMain.handle("sync:start", async (_event, { dir, extensions }) => {
     if (!supabase || !userId) {
       throw new Error("not signed in. please sign in first.");
     }
-    syncClient = new SupabaseSyncClient(supabase, userId);
-    const pulled = await syncClient.pullMissingFiles(dir);
+    if (!encryptionKey) {
+      throw new Error(
+        "no encryption key set — generate or paste one in the encryption section first.",
+      );
+    }
+
+    // reject a wrong key before touching any document: the stored fingerprint
+    // tells us which key encrypted this user's docs. a device without the
+    // original key must not be able to read or write them.
+    const fp = keyFingerprint(encryptionKey);
+    const storedFp = await storedKeyFingerprint();
+    if (storedFp && storedFp !== fp) {
+      throw new Error(
+        "this device's encryption key doesn't match the one that encrypted your documents. " +
+          "to read and write your documents, you need the original key — a new key can't open them.",
+      );
+    }
+
+    syncClient = new SupabaseSyncClient(supabase, userId, encryptionKey);
+    const { pulled, migrated } = await syncClient.pullMissingFiles(dir);
     if (pulled > 0) {
       sendLog(`pulled ${pulled} file(s) from beatsync cloud`);
+    }
+    if (migrated > 0) {
+      sendLog(`re-encrypted ${migrated} legacy file(s)`);
+    }
+
+    // first successful sync (or a legacy account with no fingerprint yet):
+    // only now is this key proven to be the right one, so stamp it.
+    if (!storedFp) {
+      await storeKeyFingerprint(fp);
     }
 
     startWatching(dir, extList);
@@ -298,6 +406,13 @@ ipcMain.handle("sync:stop", async () => {
 ipcMain.handle("sync:listDocuments", async () => {
   try {
     if (!supabase || !userId) return { ok: true, documents: [] };
+    if (!encryptionKey) {
+      return {
+        ok: false,
+        error:
+          "no encryption key set — nothing can be read or written until a key is set in the encryption section.",
+      };
+    }
     const { data, error } = await supabase
       .from("documents")
       .select("path, content, updated_at, hash")
@@ -324,11 +439,108 @@ ipcMain.handle("config:get", () => {
   return loadState();
 });
 
+ipcMain.handle("encryption:getStatus", async () => {
+  // matches: true when the device key is the one that encrypted this account's
+  // documents, false when it's a different key, null when we can't tell yet
+  // (no key, not signed in, or offline).
+  if (!encryptionKey) return { hasKey: false, matches: null };
+  try {
+    const storedFp = await storedKeyFingerprint();
+    return {
+      hasKey: true,
+      matches: storedFp ? storedFp === keyFingerprint(encryptionKey) : null,
+    };
+  } catch {
+    return { hasKey: true, matches: null };
+  }
+});
+
+ipcMain.handle("encryption:generate", () => {
+  return { key: generateKey() };
+});
+
+ipcMain.handle("encryption:set", async (_event, key) => {
+  try {
+    const buffer = normalizeKey(key);
+
+    // a wrong key must never be accepted: if this account already has a key
+    // fingerprint stored, only the matching key can unlock its documents.
+    const storedFp = await storedKeyFingerprint();
+    if (storedFp && storedFp !== keyFingerprint(buffer)) {
+      throw new Error(
+        "this encryption key doesn't match the one that encrypted your documents. " +
+          "to read and write your documents, you need the original key — a new key can't open them.",
+      );
+    }
+
+    // no fingerprint yet (fresh account or pre-fingerprint documents): prove
+    // the key is the right one by decrypting the most recent document.
+    if (!storedFp && supabase && userId) {
+      const { data: sample, error: sampleErr } = await supabase
+        .from("documents")
+        .select("content")
+        .eq("user_id", userId)
+        .order("updated_at", { ascending: false })
+        .limit(1);
+      if (sampleErr) {
+        throw new Error(`failed to verify encryption key: ${sampleErr.message}`);
+      }
+      const content = sample?.[0]?.content;
+      if (content && isEncrypted(content)) {
+        try {
+          decrypt(buffer, content);
+        } catch {
+          throw new Error(
+            "this encryption key can't open your existing documents. " +
+              "use the key you saved when you first set up beatsync.",
+          );
+        }
+      }
+    }
+
+    const changed = !encryptionKey || !encryptionKey.equals(buffer);
+    if (changed) {
+      // drop any live sync: it still holds the previous key in memory, and a
+      // changed key must be re-verified before reading or writing resumes.
+      stopWatching();
+      syncClient = null;
+    }
+
+    saveEncryptionKey(key);
+    encryptionKey = buffer;
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
+
+ipcMain.handle("encryption:getKey", () => {
+  if (!encryptionKey) return { key: null };
+  return { key: loadEncryptionKey() };
+});
+
+ipcMain.handle("encryption:clear", () => {
+  // no key on the device means nothing can be read from or written to the
+  // cloud: stop the watcher and drop the in-memory client (which holds the
+  // old key) so no document is touched until a key is set again.
+  stopWatching();
+  syncClient = null;
+  clearEncryptionKey();
+  encryptionKey = null;
+  return { ok: true };
+});
+
 // ---------------------------------------------------------------------------
 // app lifecycle
 // ---------------------------------------------------------------------------
 
 app.whenReady().then(() => {
+  try {
+    const raw = loadEncryptionKey();
+    encryptionKey = raw ? normalizeKey(raw) : null;
+  } catch {
+    encryptionKey = null;
+  }
   createWindow();
 
   app.on("activate", () => {

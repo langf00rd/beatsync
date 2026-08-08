@@ -368,6 +368,40 @@ input:focus {
 .status[data-state="error"] .dot {
   background: var(--red);
 }
+
+.status[data-state="error"] {
+  color: var(--red);
+}
+
+.status[data-state="ok"] .dot {
+  background: var(--green);
+}
+
+.status[data-state="ok"] {
+  color: var(--green);
+}
+
+.enc-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.enc-row input[type="password"],
+.enc-row input[type="text"] {
+  flex: 1;
+  min-width: 200px;
+}
+
+.enc-generated {
+  margin-top: 12px;
+}
+
+.enc-generated input[type="text"] {
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+  font-size: 13px;
+}
 .status[data-state="error"] {
   color: var(--red);
 }

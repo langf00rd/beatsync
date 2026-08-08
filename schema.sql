@@ -100,12 +100,21 @@ create table if not exists public.profiles (
   last_name text not null default '',
   email text not null,
   created_at timestamptz not null default now(),
-  last_login timestamptz not null default now()
+  last_login timestamptz not null default now(),
+  -- fingerprint (hmac of the key, never the key itself) of the encryption
+  -- key this user's documents were encrypted with. stored per user, so the
+  -- same key works on any device: on a new device, entering the saved key
+  -- matches this fingerprint and full access is granted. only a different
+  -- (wrong) key — one that can't actually decrypt the documents — is
+  -- rejected, before any document is decrypted or written.
+  key_hash text
 );
 
 -- added separately so an already-created table picks up the column too; on a
 -- fresh install this just skips.
 alter table public.profiles add column if not exists created_at timestamptz not null default now();
+
+alter table public.profiles add column if not exists key_hash text;
 
 alter table public.profiles enable row level security;
 

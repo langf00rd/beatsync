@@ -24,7 +24,7 @@
           <button class="tab" data-tab="signup">create account</button>
         </div>
 
-        <form id="auth-form">
+        <form id="auth-form" novalidate>
           <div id="name-fields" class="name-fields hidden">
             <label class="field">
               <span>first name</span>
@@ -91,6 +91,45 @@
           <button id="sign-out" class="btn ghost">sign out</button>
         </div>
       </header>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>encryption</h2>
+          <span id="enc-status" class="status" data-state="idle">
+            <span class="dot"></span>
+            <span id="enc-status-text">no key</span>
+          </span>
+        </div>
+        <p class="hint">
+          documents are encrypted before they leave this machine and decrypted
+          on the way back, so the server only ever stores ciphertext. your key
+          is saved in the os keychain and never sent anywhere. on a new device,
+          paste the key you saved when you first set up beatsync — a different
+          key won't unlock your documents, and if you lose it, they can't be
+          recovered.
+        </p>
+        <div class="enc-row">
+          <input
+            type="password"
+            id="enc-key-input"
+            placeholder="paste your key here…"
+            autocomplete="off"
+          />
+          <button id="enc-generate" class="btn secondary">generate key</button>
+          <button id="enc-save" class="btn primary">save key</button>
+          <button id="enc-clear" class="btn danger hidden">clear key</button>
+        </div>
+        <div id="enc-generated" class="enc-generated hidden">
+          <p class="hint">
+            new key generated — copy it somewhere safe now. it won't be shown
+            again once you leave this screen.
+          </p>
+          <div class="enc-row">
+            <input type="text" id="enc-generated-value" readonly />
+            <button id="enc-copy" class="btn ghost small">copy</button>
+          </div>
+        </div>
+      </section>
 
       <section class="panel">
         <div class="panel-head">

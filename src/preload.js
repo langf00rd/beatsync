@@ -13,6 +13,14 @@ contextBridge.exposeInMainWorld("beatsync", {
 
   selectDirectory: () => ipcRenderer.invoke("dialog:selectDirectory"),
 
+  encryption: {
+    getStatus: () => ipcRenderer.invoke("encryption:getStatus"),
+    generate: () => ipcRenderer.invoke("encryption:generate"),
+    set: (key) => ipcRenderer.invoke("encryption:set", key),
+    getKey: () => ipcRenderer.invoke("encryption:getKey"),
+    clear: () => ipcRenderer.invoke("encryption:clear"),
+  },
+
   onLog: (callback) => {
     const listener = (_event, payload) => callback(payload);
     ipcRenderer.on("log", listener);
