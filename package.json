@@ -1,0 +1,45 @@
+{
+  "name": "beatsync",
+  "version": "1.0.0",
+  "description": "a tool that backs up Beat screenplay documents to the cloud",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node scripts/inject-config.js && electron .",
+    "dev": "node scripts/inject-config.js && electron . --dev",
+    "inject-config": "node scripts/inject-config.js",
+    "build": "node scripts/inject-config.js && electron-builder",
+    "build:mac": "node scripts/inject-config.js && electron-builder --mac",
+    "build:win": "node scripts/inject-config.js && electron-builder --win",
+    "build:linux": "node scripts/inject-config.js && electron-builder --linux"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "chokidar": "^3.6.0",
+    "ws": "^8.21.3"
+  },
+  "devDependencies": {
+    "electron": "^30.5.1",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.beatsync.app",
+    "productName": "BeatSync",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}
