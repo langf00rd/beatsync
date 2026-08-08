@@ -45,7 +45,8 @@ function main() {
   if (!supabaseUrl || !supabaseAnonKey) {
     console.warn(
       "[beatsync] warning: SUPABASE_URL / SUPABASE_ANON_KEY not found in " +
-        envPath + " — the app will not be able to connect until you add them.",
+        envPath +
+        " — the app will not be able to connect until you add them.",
     );
   } else {
     console.log("[beatsync] read config from " + file);

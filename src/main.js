@@ -51,7 +51,7 @@ function createWindow() {
     height: 720,
     minWidth: 700,
     minHeight: 500,
-    title: "BeatSync",
+    title: "beatsync",
     backgroundColor: "#0f1115",
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
