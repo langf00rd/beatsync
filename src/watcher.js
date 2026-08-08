@@ -63,9 +63,7 @@ class DirectoryWatcher extends EventEmitter {
       .on("ready", () => {
         initialScanDone = true;
 
-        this.logger.log(
-          `initial scan complete: found ${initialScanCount} matching file(s) in ${this.rootDir}`,
-        );
+        this.logger.log(`scan complete: found ${initialScanCount} file(s)`);
 
         if (initialScanCount === 0) {
           this.logger.log(
@@ -76,7 +74,7 @@ class DirectoryWatcher extends EventEmitter {
       });
 
     this.logger.log(
-      `watching ${this.rootDir} for changes to ${[...this.extensions].join(", ")}`,
+      `[watching] for changes to ${[...this.extensions].join(", ")}`,
     );
 
     return this._watcher;

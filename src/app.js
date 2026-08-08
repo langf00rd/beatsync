@@ -13,7 +13,6 @@ const passwordInput = $("password");
 const authError = $("auth-error");
 const authSubmit = $("auth-submit");
 const tabs = document.querySelectorAll(".tab");
-const userEmail = $("user-email");
 const signOutBtn = $("sign-out");
 const dirInput = $("dir-input");
 const chooseDirBtn = $("choose-dir");
@@ -36,6 +35,9 @@ const encClearBtn = $("enc-clear");
 const encGenerated = $("enc-generated");
 const encGeneratedValue = $("enc-generated-value");
 const encCopyBtn = $("enc-copy");
+const toastHost = $("toast-host");
+
+const TOAST_DURATION_MS = 6000;
 
 let authMode = "signin";
 let watching = false;
@@ -50,8 +52,7 @@ function showAuth() {
   mainView.classList.add("hidden");
 }
 
-function showMain(email) {
-  userEmail.textContent = email;
+function showMain() {
   authView.classList.add("hidden");
   mainView.classList.remove("hidden");
   initEncryption();
@@ -114,7 +115,7 @@ authForm.addEventListener("submit", async (e) => {
       return;
     }
 
-    showMain(result.session.email);
+    showMain();
   } catch (err) {
     showAuthError(err?.message ?? "something went wrong, please try again.");
   } finally {
@@ -239,7 +240,9 @@ chooseDirBtn.addEventListener("click", async () => {
 startSyncBtn.addEventListener("click", async () => {
   const dir = dirInput.value.trim();
   if (!dir) {
-    setStatus("error", "choose a folder first");
+    const msg = "choose a folder in settings first";
+    setStatus("error", msg);
+    showError(msg);
     return;
   }
 
@@ -254,7 +257,8 @@ startSyncBtn.addEventListener("click", async () => {
   const result = await api.startSync({ dir, extensions });
 
   startSyncBtn.disabled = false;
-  startSyncBtn.textContent = "start Watching";
+  startSyncBtn.innerHTML =
+    '<span class="icon icon-plus" aria-hidden="true"></span> start watching';
 
   if (!result.ok) {
     addLog(result.error, "error");
@@ -292,7 +296,7 @@ api.onWatcherStarted(({ rootDir }) => {
   dirInput.value = rootDir;
   startSyncBtn.classList.add("hidden");
   stopSyncBtn.classList.remove("hidden");
-  addLog(`watching ${rootDir} — changes sync automatically.`);
+  addLog(`[watching] changes sync automatically.`);
 });
 
 api.onWatcherStopped(() => {
@@ -362,6 +366,7 @@ function renderFiles() {
 
 function setStatus(state, text) {
   syncState.dataset.state = state;
+  syncMeta.classList.toggle("sync-meta-error", state === "error");
   if (state === "watching") {
     syncLabel.textContent = "watching";
     syncMeta.textContent = dirInput.value || "";
@@ -391,6 +396,62 @@ function addLog(message, className = "") {
   while (logBox.childElementCount > 200) {
     logBox.removeChild(logBox.firstChild);
   }
+
+  if (className === "error") {
+    showError(message);
+  }
+}
+
+function normalizeErrorMessage(message) {
+  return String(message)
+    .replace(/^error:\s*/i, "")
+    .trim();
+}
+
+function showError(message) {
+  showToast(normalizeErrorMessage(message), "error");
+}
+
+function showToast(message, type = "error") {
+  if (!message || !toastHost) return;
+
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${type}`;
+  toast.setAttribute("role", "alert");
+
+  const text = document.createElement("span");
+  text.className = "toast-message";
+  text.textContent = message;
+
+  const dismiss = document.createElement("button");
+  dismiss.type = "button";
+  dismiss.className = "toast-dismiss";
+  dismiss.setAttribute("aria-label", "dismiss alert");
+  dismiss.textContent = "×";
+
+  toast.append(text, dismiss);
+  toastHost.appendChild(toast);
+
+  while (toastHost.childElementCount > 3) {
+    removeToast(toastHost.firstElementChild);
+  }
+
+  requestAnimationFrame(() => toast.classList.add("visible"));
+
+  let timer = setTimeout(() => removeToast(toast), TOAST_DURATION_MS);
+
+  dismiss.addEventListener("click", () => {
+    clearTimeout(timer);
+    removeToast(toast);
+  });
+}
+
+function removeToast(toast) {
+  if (!toast || toast.classList.contains("leaving")) return;
+  toast.classList.remove("visible");
+  toast.classList.add("leaving");
+  toast.addEventListener("transitionend", () => toast.remove(), { once: true });
+  setTimeout(() => toast.remove(), 350);
 }
 
 function formatBytes(n) {
@@ -426,7 +487,7 @@ function formatTime(iso) {
 
   const restored = await api.restoreSession();
   if (restored.ok) {
-    showMain(restored.session.email);
+    showMain();
     // resume watching from the last session if possible, then sync the
     // controls with whatever state the main process is actually in (the
     // watcher may already be running from a previous launch or the tray).

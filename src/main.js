@@ -14,7 +14,13 @@ const { createClient } = require("@supabase/supabase-js");
 const { WebSocket } = require("ws");
 const { SupabaseSyncClient } = require("./sync.js");
 const { DirectoryWatcher } = require("./watcher");
-const { generateKey, normalizeKey, fingerprint, isEncrypted, decrypt } = require("./crypto");
+const {
+  generateKey,
+  normalizeKey,
+  fingerprint,
+  isEncrypted,
+  decrypt,
+} = require("./crypto");
 
 // credentials are written into config.generated.js by scripts/inject-config.js
 // (which reads the repo root .env) so end users never configure anything.
@@ -26,7 +32,9 @@ const REQUEST_TIMEOUT_MS = 15000;
 
 function timedFetch(input, init) {
   const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
-  const signal = init?.signal ? AbortSignal.any([init.signal, timeout]) : timeout;
+  const signal = init?.signal
+    ? AbortSignal.any([init.signal, timeout])
+    : timeout;
   return fetch(input, { ...init, signal });
 }
 
@@ -110,7 +118,8 @@ function showMainWindow() {
   }
 }
 
-const trayIconPath = () => path.join(__dirname, "..", "assets", "trayTemplate.png");
+const trayIconPath = () =>
+  path.join(__dirname, "..", "assets", "trayTemplate.png");
 
 function buildTrayMenu() {
   const watching = !!watcher;
@@ -118,10 +127,7 @@ function buildTrayMenu() {
     ? `running — watching ${watchDir}`
     : "running — not watching";
 
-  const items = [
-    { label: statusLabel, enabled: false },
-    { type: "separator" },
-  ];
+  const items = [{ label: statusLabel, enabled: false }, { type: "separator" }];
 
   if (watching) {
     items.push({
@@ -151,7 +157,9 @@ function updateTrayMenu() {
 }
 
 function watchingLabel() {
-  return watcher ? `beatsync — watching ${watchDir}` : "beatsync — not watching";
+  return watcher
+    ? `beatsync — watching ${watchDir}`
+    : "beatsync — not watching";
 }
 
 function createTray() {
@@ -375,7 +383,8 @@ function startWatching(dir, extensions) {
     watcher = null;
   }
 
-  syncClient = syncClient ?? new SupabaseSyncClient(supabase, userId, encryptionKey);
+  syncClient =
+    syncClient ?? new SupabaseSyncClient(supabase, userId, encryptionKey);
   watchDir = dir;
 
   watcher = new DirectoryWatcher({
@@ -613,8 +622,8 @@ ipcMain.handle("encryption:set", async (_event, key) => {
     const storedFp = await storedKeyFingerprint();
     if (storedFp && storedFp !== keyFingerprint(buffer)) {
       throw new Error(
-        "this encryption key doesn't match the one that encrypted your documents. " +
-          "to read and write your documents, you need the original key — a new key can't open them.",
+        "this key doesn't match the original key used to encrypt your documents. " +
+          "you need the original key to access them",
       );
     }
 
@@ -628,7 +637,9 @@ ipcMain.handle("encryption:set", async (_event, key) => {
         .order("updated_at", { ascending: false })
         .limit(1);
       if (sampleErr) {
-        throw new Error(`failed to verify encryption key: ${sampleErr.message}`);
+        throw new Error(
+          `failed to verify encryption key: ${sampleErr.message}`,
+        );
       }
       const content = sample?.[0]?.content;
       if (content && isEncrypted(content)) {

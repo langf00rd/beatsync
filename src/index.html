@@ -86,17 +86,22 @@
           <span>beatsync</span>
         </div>
         <div class="topbar-right">
-          <span id="user-email" class="user-email"></span>
-          <!-- settings toggle -->
           <button
             id="settings-toggle"
-            class="btn ghost"
+            class="btn ghost icon-btn"
             aria-expanded="false"
             aria-controls="settings-drawer"
+            aria-label="settings"
           >
-            settings
+            <span class="icon icon-settings" aria-hidden="true"></span>
           </button>
-          <button id="sign-out" class="btn ghost">sign out</button>
+          <button
+            id="sign-out"
+            class="btn ghost icon-btn"
+            aria-label="sign out"
+          >
+            <span class="icon icon-logout" aria-hidden="true"></span>
+          </button>
         </div>
       </header>
 
@@ -107,70 +112,107 @@
         role="region"
         aria-label="settings"
       >
-        <div class="settings-section">
-          <h3 class="settings-heading">sync folder</h3>
-          <div class="dir-row">
-            <input
-              type="text"
-              id="dir-input"
-              placeholder="choose a folder…"
-              readonly
-            />
-            <button id="choose-dir" class="btn secondary">choose folder</button>
-            <button id="start-sync" class="btn primary">start watching</button>
-            <button id="stop-sync" class="btn danger hidden">stop</button>
-          </div>
-          <details class="advanced">
-            <summary>file types to watch</summary>
-            <div class="ext-row">
-              <input
-                type="text"
-                id="extensions-input"
-                placeholder=".fountain,.txt"
-                value=".fountain"
-              />
-              <span class="hint">comma-separated extensions</span>
+        <div class="settings-grid">
+          <!-- sync folder -->
+          <div class="setting-block setting-block-folder">
+            <div class="setting-header">
+              <h3 class="settings-heading">sync folder</h3>
             </div>
-          </details>
-        </div>
-
-        <div class="settings-divider"></div>
-
-        <div class="settings-section">
-          <h3 class="settings-heading">
-            encryption
-            <span id="enc-status" class="status" data-state="idle">
-              <span class="dot"></span>
-              <span id="enc-status-text">no key</span>
-            </span>
-          </h3>
-          <p class="hint">
-            your documents are encrypted before they leave your computer, so
-            your files stay private and secure. We never store or have access to
-            your encryption key. Please keep your key somewhere safe. If you
-            lose it, you’ll lose access to your stored documents, and we won’t
-            be able to recover them for you.
-          </p>
-          <div class="enc-row">
-            <input
-              type="password"
-              id="enc-key-input"
-              placeholder="paste your key here…"
-              autocomplete="off"
-            />
-            <button id="enc-generate" class="btn secondary">
-              generate new key
-            </button>
-            <button id="enc-save" class="btn primary">save key</button>
-            <button id="enc-clear" class="btn danger hidden">clear key</button>
+            <div class="setting-body">
+              <div class="field-stack">
+                <input
+                  type="text"
+                  id="dir-input"
+                  class="setting-input"
+                  placeholder="no folder selected"
+                  readonly
+                />
+                <button id="choose-dir" class="btn secondary">
+                  choose folder
+                </button>
+              </div>
+            </div>
           </div>
-          <div id="enc-generated" class="enc-generated hidden">
-            <p class="hint warning">
-              copy this somewhere safe — it won't be shown again.
-            </p>
-            <div class="enc-row">
-              <input type="text" id="enc-generated-value" readonly />
-              <button id="enc-copy" class="btn ghost small">copy</button>
+
+          <!-- file types -->
+          <div class="setting-block setting-block-types">
+            <div class="setting-header">
+              <h3 class="settings-heading">file types</h3>
+            </div>
+            <div class="setting-body">
+              <div class="field-stack">
+                <input
+                  type="text"
+                  id="extensions-input"
+                  class="setting-input"
+                  placeholder=".fountain,.txt"
+                  value=".fountain"
+                />
+                <span class="field-caption">comma-separated extensions</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- encryption -->
+          <div class="setting-block setting-block-encryption">
+            <div class="setting-header">
+              <h3 class="settings-heading">encryption</h3>
+              <span id="enc-status" class="status" data-state="idle">
+                <span class="dot"></span>
+                <span id="enc-status-text">no key</span>
+              </span>
+            </div>
+            <div class="setting-body">
+              <p class="setting-desc">
+                your files are encrypted on your device before upload. we never
+                see your key
+              </p>
+              <details class="setting-details">
+                <summary>why this matters</summary>
+                <p class="setting-details-body">
+                  if you lose your key, stored documents cannot be recovered.
+                  keep a copy somewhere safe
+                </p>
+              </details>
+              <div class="field-stack">
+                <input
+                  type="password"
+                  id="enc-key-input"
+                  class="setting-input"
+                  placeholder="paste your encryption key…"
+                  autocomplete="off"
+                />
+                <div class="setting-actions">
+                  <button id="enc-generate" class="btn secondary icon-text-btn">
+                    <span class="icon icon-key" aria-hidden="true"></span>
+                    generate
+                  </button>
+                  <button id="enc-save" class="btn primary">save key</button>
+                  <button
+                    id="enc-clear"
+                    class="btn ghost danger-text icon-text-btn hidden"
+                  >
+                    <span class="icon icon-trash" aria-hidden="true"></span>
+                    clear
+                  </button>
+                </div>
+              </div>
+              <div id="enc-generated" class="enc-generated hidden">
+                <p class="setting-desc warning">
+                  copy this somewhere safe — it won't be shown again.
+                </p>
+                <div class="field-stack">
+                  <input
+                    type="text"
+                    id="enc-generated-value"
+                    class="setting-input"
+                    readonly
+                  />
+                  <button id="enc-copy" class="btn secondary small">
+                    copy key
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -180,9 +222,20 @@
       <!-- ── status hero ───────────────────────────────────── -->
       <section class="hero-status">
         <div class="hero-inner">
-          <div class="sync-state" id="sync-state" data-state="idle">
-            <span class="sync-dot"></span>
-            <span id="sync-label" class="sync-label">not watching</span>
+          <div class="hero-row">
+            <div class="sync-state" id="sync-state" data-state="idle">
+              <span class="sync-dot"></span>
+              <span id="sync-label" class="sync-label">not watching</span>
+            </div>
+            <div class="hero-actions">
+              <button id="start-sync" class="btn primary icon-text-btn">
+                <span class="icon icon-plus" aria-hidden="true"></span>
+                start watching
+              </button>
+              <button id="stop-sync" class="btn danger icon-text-btn hidden">
+                stop watching
+              </button>
+            </div>
           </div>
           <p id="sync-meta" class="sync-meta"></p>
         </div>
@@ -200,7 +253,10 @@
       <section class="panel" id="panel-files">
         <div class="panel-head">
           <h2>your files</h2>
-          <button id="refresh-files" class="btn ghost small">refresh</button>
+          <button id="refresh-files" class="btn ghost small icon-text-btn">
+            <span class="icon icon-refresh" aria-hidden="true"></span>
+            refresh
+          </button>
         </div>
         <p id="files-empty" class="empty hidden">
           no files yet — pick a folder in settings and start watching.
@@ -217,6 +273,8 @@
         </table>
       </section>
     </main>
+
+    <div id="toast-host" class="toast-host" aria-live="polite"></div>
 
     <script src="app.js"></script>
   </body>
