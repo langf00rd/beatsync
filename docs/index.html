@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>beatsync — cloud backup for Beat screenwriters</title>
+  <meta name="description" content="beatsync automatically backs up your Beat screenplay files to the cloud with end-to-end encryption. Your scripts are safe — even if your Mac isn't." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="brand">
+        <h1>beatsync</h1>
+        <p class="tagline">cloud backup for your Beat screenplays.</p>
+      </div>
+
+      <p class="pitch">
+        Beat keeps your scripts on your device. That's great for privacy —
+        but a stolen laptop or a dead hard drive takes your work with it.
+        beatsync watches your scripts folder and silently backs up every
+        change, encrypted end-to-end, so your screenplays are safe
+        even when your Mac isn't.
+      </p>
+
+      <div class="cta">
+        <a id="download-btn" class="btn primary"
+          href="https://github.com/langf00rd/beatsync/releases/latest"
+          target="_blank" rel="noopener">
+          Download for macOS
+        </a>
+      </div>
+
+      <div id="platform-buttons" class="platform-buttons"></div>
+
+      <p class="caption">free &amp; open source · macOS · Windows · Linux</p>
+    </div>
+  </header>
+
+  <main>
+
+    <section class="section">
+      <h2>Beat is brilliant. It just doesn't back up your work.</h2>
+      <div class="cards">
+        <div class="card">
+          <h3>Automatic, silent backup</h3>
+          <p>The moment you save in Beat, beatsync picks it up and pushes it to the cloud. No buttons, no interruptions — just write.</p>
+        </div>
+        <div class="card">
+          <h3>End-to-end encrypted</h3>
+          <p>Your scripts are encrypted on your Mac before they ever leave it. Your key never touches a server. Nobody reads your work but you.</p>
+        </div>
+        <div class="card">
+          <h3>Your .fountain files, safe</h3>
+          <p>Built around Fountain — the same open format Beat uses. Your files stay portable, readable in any editor, forever.</p>
+        </div>
+        <div class="card">
+          <h3>Pull down on any machine</h3>
+          <p>New computer? Sign in, enter your key, and every screenplay you've ever written comes right back. Pick up exactly where you left off.</p>
+        </div>
+        <div class="card">
+          <h3>Runs quietly in the background</h3>
+          <p>beatsync sits out of your way — no menu bar clutter while you're in the zone. Check the app when you want to, ignore it when you don't.</p>
+        </div>
+        <div class="card">
+          <h3>Free &amp; open source</h3>
+          <p>Like Beat itself, beatsync has no subscription and no lock-in. Your scripts belong to you — the backup does too.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Set it up once. Never think about it again.</h2>
+      <ol class="steps">
+        <li>
+          <strong>Download beatsync</strong> and install it on your Mac.
+        </li>
+        <li>
+          <strong>Create a free account</strong> — just an email and a password.
+        </li>
+        <li>
+          <strong>Point it at your Beat folder</strong> — the folder where Beat saves
+          your .fountain files (usually <code>~/Documents/Beat</code>).
+        </li>
+        <li>
+          <strong>Generate your encryption key</strong> and save it somewhere safe.
+          This is the only thing beatsync can't recover for you.
+        </li>
+        <li>
+          <strong>Write.</strong> Every change is encrypted and backed up the moment
+          you hit save.
+        </li>
+      </ol>
+    </section>
+
+    <section class="section">
+      <h2>Screenshots</h2>
+      <div class="shots">
+        <a href="https://github.com/user-attachments/assets/6665e2c9-2656-4b8b-89b2-fd4e0a6c503e"
+          target="_blank" rel="noopener">
+          <img src="https://github.com/user-attachments/assets/6665e2c9-2656-4b8b-89b2-fd4e0a6c503e"
+            alt="beatsync main view — activity log and synced files" />
+        </a>
+        <a href="https://github.com/user-attachments/assets/0af3fb68-15ba-4f08-a0bc-c14fc65e605c"
+          target="_blank" rel="noopener">
+          <img src="https://github.com/user-attachments/assets/0af3fb68-15ba-4f08-a0bc-c14fc65e605c"
+            alt="beatsync settings — folder selection and encryption" />
+        </a>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Questions, answered.</h2>
+      <div class="faq">
+        <details>
+          <summary>Does this work with Beat's .fountain files?</summary>
+          <p>Yes — beatsync is built around Fountain. Point it at the folder Beat uses and it handles everything automatically. It also works with any other file types you throw at it.</p>
+        </details>
+        <details>
+          <summary>Beat stores files locally for privacy. Does beatsync break that?</summary>
+          <p>No. Your files are encrypted on your device before they're uploaded, using a key that only you hold. The server stores ciphertext — meaningless without your key. It's the same privacy model Beat uses locally, extended to the cloud.</p>
+        </details>
+        <details>
+          <summary>What if I lose my encryption key?</summary>
+          <p>Your locally-saved files are always intact — beatsync doesn't touch them. The key only matters for restoring from the cloud. We can't recover it for you, so keep a copy somewhere safe when you set up.</p>
+        </details>
+        <details>
+          <summary>What happens to my scripts if I lose my Mac?</summary>
+          <p>Install beatsync on a new machine, sign in, enter your encryption key, and everything is pulled back down. Every version that was ever synced is there.</p>
+        </details>
+        <details>
+          <summary>Does it work with other screenwriting apps too?</summary>
+          <p>Absolutely. beatsync watches any folder and backs up any file types you specify. If your app saves to disk, beatsync can protect it.</p>
+        </details>
+        <details>
+          <summary>How much does it cost?</summary>
+          <p>Nothing. beatsync is free and open source — same philosophy as Beat.</p>
+        </details>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>
+      beatsync — free &amp; open source on
+      <a href="https://github.com/langf00rd/beatsync" target="_blank" rel="noopener">GitHub</a>.
+      Built for writers who use <a href="https://www.beat-app.fi/" target="_blank" rel="noopener">Beat</a>.
+    </p>
+  </footer>
+
+  <script>
+    const REPO = "langf00rd/beatsync";
+
+    async function loadDownload() {
+      const btn = document.getElementById("download-btn");
+      const platformRow = document.getElementById("platform-buttons");
+
+      try {
+        const res = await fetch(
+          `https://api.github.com/repos/${REPO}/releases/latest`,
+          { headers: { Accept: "application/vnd.github+json" } },
+        );
+        if (!res.ok) throw new Error("release not found");
+        const release = await res.json();
+        const urls = (release.assets || []).map((a) => a.browser_download_url);
+
+        const isArm = (u) => /arm64/i.test(u);
+        const dmg      = urls.find((u) => u.endsWith(".dmg") && isArm(u));
+        const intelDmg = urls.find((u) => u.endsWith(".dmg") && !isArm(u));
+        const win      = urls.find((u) => /\.exe$/i.test(u));
+        const linux    = urls.find((u) => /\.AppImage$/i.test(u));
+
+        // Primary button gets the best available platform
+        let primaryUrl;
+        if (dmg)        { primaryUrl = dmg;    btn.href = dmg;    btn.textContent = "Download for macOS"; }
+        else if (win)   { primaryUrl = win;    btn.href = win;    btn.textContent = "Download for Windows"; }
+        else if (linux) { primaryUrl = linux;  btn.href = linux;  btn.textContent = "Download for Linux"; }
+
+        // Secondary buttons: all platforms except whichever is already the primary
+        const platforms = [
+          { label: "macOS (Apple Silicon)", url: dmg },
+          { label: "macOS (Intel)",         url: intelDmg },
+          { label: "Windows",               url: win },
+          { label: "Linux",                 url: linux },
+        ].filter((p) => p.url && p.url !== primaryUrl);
+
+        for (const p of platforms) {
+          const a = document.createElement("a");
+          a.className   = "btn secondary";
+          a.href        = p.url;
+          a.target      = "_blank";
+          a.rel         = "noopener";
+          a.textContent = p.label;
+          platformRow.appendChild(a);
+        }
+      } catch {
+        btn.textContent = "Download beatsync";
+      }
+    }
+
+    loadDownload();
+  </script>
+</body>
+</html>
