@@ -29,18 +29,18 @@
 }
 
 :root[data-theme="light"] {
-  --bg: #f4efe6;
-  --surface: #fcf8f0;
-  --surface-2: #efe9dc;
-  --border: #d8cdb9;
-  --border-hi: #bba685;
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f7f7f7;
+  --border: #e5e5e5;
+  --border-hi: #d0d0d0;
 
-  --text: #1f1914;
-  --text-dim: #6f655b;
-  --text-mid: #4e463f;
+  --text: #111111;
+  --text-dim: #666666;
+  --text-mid: #444444;
 
-  --green: #3d714f;
-  --red: #b45555;
+  --green: #2f7a4f;
+  --red: #b55353;
   --amber: #9a6a10;
 }
 

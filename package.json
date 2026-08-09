@@ -4,13 +4,12 @@
   "description": "a tool that backs up Beat screenplay documents to the cloud",
   "main": "src/main.js",
   "scripts": {
-    "start": "node scripts/inject-config.js && electron .",
-    "dev": "node scripts/inject-config.js && electron . --dev",
-    "inject-config": "node scripts/inject-config.js",
-    "build": "node scripts/inject-config.js && electron-builder",
-    "build:mac": "node scripts/inject-config.js && electron-builder --mac --publish never",
-    "build:win": "node scripts/inject-config.js && electron-builder --win",
-    "build:linux": "node scripts/inject-config.js && electron-builder --linux",
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "build:mac": "electron-builder --mac --publish never",
+    "build:win": "electron-builder --win",
+    "build:linux": "electron-builder --linux",
     "release": "node scripts/release.js",
     "release:ci": "node scripts/release.js --yes"
   },
@@ -25,7 +24,6 @@
   },
   "build": {
     "appId": "com.beatsync.app",
-    "publish": null,
     "productName": "beatsync",
     "directories": {
       "output": "dist"
