@@ -8,20 +8,50 @@ permissions:
   contents: write
 
 jobs:
-  release:
-    runs-on: macos-latest
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            command: npm run build:mac
+          - os: windows-latest
+            command: npm run build:win
+          - os: ubuntu-latest
+            command: npm run build:linux
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      
+
       - run: npm ci
-      
-      - run: npm run build:mac
-      
+
+      # config.generated.js is gitignored, so each build regenerates it from
+      # the repo secrets. configure SUPABASE_URL and SUPABASE_ANON_KEY under
+      # Settings → Secrets and variables → Actions for the app to connect.
+      - run: ${{ matrix.command }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.os }}
+          path: dist
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
       - uses: softprops/action-gh-release@v2
         with:
-          files: dist/*.dmg
+          files: dist/**/*
