@@ -58,7 +58,7 @@ function ensureUpToDateWithRemote() {
   const localRef = git("git rev-parse HEAD");
   if (localRef !== remoteRef) {
     const aheadBehind = git("git rev-list --left-right --count HEAD...@{u}");
-    const [behind, ahead] = aheadBehind.split("\t").map(Number);
+    const [ahead, behind] = aheadBehind.split("\t").map(Number);
 
     if (behind > 0) {
       throw new Error(
