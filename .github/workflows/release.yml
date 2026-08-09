@@ -28,8 +28,6 @@ jobs:
 
       - name: build
         run: npm run build:mac
-        env:
-          CSC_IDENTITY_AUTO_DISCOVERY: "false"
 
       - name: create github release
         uses: softprops/action-gh-release@v2
