@@ -11,7 +11,8 @@
     "build:mac": "node scripts/inject-config.js && electron-builder --mac",
     "build:win": "node scripts/inject-config.js && electron-builder --win",
     "build:linux": "node scripts/inject-config.js && electron-builder --linux",
-    "release": "node scripts/release.js"
+    "release": "node scripts/release.js",
+    "release:ci": "node scripts/release.js --yes"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
