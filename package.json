@@ -6,10 +6,10 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "build": "electron-builder",
-    "build:mac": "electron-builder --mac --publish never",
-    "build:win": "electron-builder --win",
-    "build:linux": "electron-builder --linux",
+    "build": "node scripts/inject-config.js && electron-builder --mac --arm64 --x64 --win --linux --publish never",
+    "build:mac": "node scripts/inject-config.js && electron-builder --mac --arm64 --x64 --publish never",
+    "build:win": "node scripts/inject-config.js && electron-builder --win --publish never",
+    "build:linux": "node scripts/inject-config.js && electron-builder --linux --publish never",
     "release": "node scripts/release.js",
     "release:ci": "node scripts/release.js --yes"
   },

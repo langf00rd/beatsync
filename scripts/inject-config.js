@@ -35,9 +35,9 @@ function loadEnv(filePath) {
 function main() {
   const { file, env } = findEnvFile();
 
-  const supabaseUrl = env.SUPABASE_URL;
-  const supabaseAnonKey = env.SUPABASE_ANON_KEY;
-  const defaultExtensions = (env.SYNC_EXTENSIONS ?? ".fountain")
+  const supabaseUrl = env.SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseAnonKey = env.SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+  const defaultExtensions = (env.SYNC_EXTENSIONS ?? process.env.SYNC_EXTENSIONS ?? ".fountain")
     .split(",")
     .map((e) => e.trim())
     .filter(Boolean);
