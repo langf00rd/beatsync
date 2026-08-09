@@ -662,7 +662,7 @@ input[readonly] {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-dim);
-  margin-bottom:-8px
+  margin-bottom: -8px
 }
 
 /* ── Log ────────────────────────────────────────────────────── */
@@ -783,8 +783,8 @@ input[readonly] {
 
 .setting-header {
   display: flex;
-align-items: center;
-justify-content: space-between;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 18px;
 }
 
@@ -812,7 +812,7 @@ justify-content: space-between;
   /* font-size: 13px; */
   line-height: 1.65;
   letter-spacing: 0.01em;
-  margin-top:-22px
+  margin-top: -22px
 }
 
 .setting-desc.warning {

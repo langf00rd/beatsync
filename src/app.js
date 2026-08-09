@@ -71,7 +71,7 @@ function applyTheme(theme) {
 
   try {
     window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
-  } catch {}
+  } catch { }
 
   updateThemeButtons(nextTheme);
 }
@@ -80,7 +80,7 @@ function initTheme() {
   let savedTheme = "dark";
   try {
     savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY) ?? "dark";
-  } catch {}
+  } catch { }
   applyTheme(savedTheme);
 }
 

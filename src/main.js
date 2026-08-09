@@ -319,7 +319,7 @@ async function restoreSession() {
 function clearSession() {
   try {
     fs.unlinkSync(sessionPath());
-  } catch {}
+  } catch { }
 }
 
 // the encryption key never touches supabase — it is stored encrypted by the
@@ -346,7 +346,7 @@ function saveEncryptionKey(key) {
 function clearEncryptionKey() {
   try {
     fs.unlinkSync(encryptionKeyPath());
-  } catch {}
+  } catch { }
 }
 
 // the device key's server-side fingerprint (see crypto.fingerprint): used to
@@ -455,7 +455,7 @@ async function startWatchingFlow({ dir, extensions }) {
   if (storedFp && storedFp !== fp) {
     throw new Error(
       "this device's encryption key doesn't match the one that encrypted your documents. " +
-        "to read and write your documents, you need the original key — a new key can't open them.",
+      "to read and write your documents, you need the original key — a new key can't open them.",
     );
   }
 
@@ -634,7 +634,7 @@ ipcMain.handle("encryption:set", async (_event, key) => {
     if (storedFp && storedFp !== keyFingerprint(buffer)) {
       throw new Error(
         "this key doesn't match the original key used to encrypt your documents. " +
-          "you need the original key to access them",
+        "you need the original key to access them",
       );
     }
 
@@ -659,7 +659,7 @@ ipcMain.handle("encryption:set", async (_event, key) => {
         } catch {
           throw new Error(
             "this encryption key can't open your existing documents. " +
-              "use the key you saved when you first set up beatsync.",
+            "use the key you saved when you first set up beatsync.",
           );
         }
       }

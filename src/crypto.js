@@ -22,7 +22,7 @@ function normalizeKey(key) {
         buf = candidate;
         break;
       }
-    } catch {}
+    } catch { }
   }
   if (!buf) {
     throw new Error(

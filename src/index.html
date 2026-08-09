@@ -1,322 +1,316 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data:;"
-    />
-    <title>beatsync</title>
-    <script>
-      try {
-        const storedTheme = window.localStorage.getItem("beatsync-theme");
-        const theme = storedTheme === "light" ? "light" : "dark";
-        document.documentElement.setAttribute("data-theme", theme);
-      } catch {}
-    </script>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
 
-    <!-- ── auth view ──────────────────────────────────────────── -->
-    <main id="auth-view" class="view">
-      <div class="auth-card">
-        <div class="brand">
-          <h1>beatsync</h1>
-          <p class="tagline">your scripts, backed up to the cloud.</p>
-        </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data:;" />
+  <title>beatsync</title>
+  <script>
+    try {
+      const storedTheme = window.localStorage.getItem("beatsync-theme");
+      const theme = storedTheme === "light" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", theme);
+    } catch { }
+  </script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
 
-        <div class="tabs">
-          <button class="tab active" data-tab="signin">sign in</button>
-          <button class="tab" data-tab="signup">create account</button>
-        </div>
+<body>
 
-        <form id="auth-form" novalidate>
-          <div id="name-fields" class="name-fields hidden">
-            <label class="field">
-              <span>first name</span>
-              <input type="text" id="first-name" name="firstName"
-                placeholder="jane" required autocomplete="given-name" />
-            </label>
-            <label class="field">
-              <span>last name</span>
-              <input type="text" id="last-name" name="lastName"
-                placeholder="doe" required autocomplete="family-name" />
-            </label>
-          </div>
-          <label class="field">
-            <span>email</span>
-            <input type="email" id="email" name="email"
-              placeholder="you@example.com" required autocomplete="email" />
-          </label>
-          <label class="field">
-            <span>password</span>
-            <input type="password" id="password" name="password"
-              placeholder="at least 6 characters" required
-              autocomplete="current-password" />
-          </label>
-          <p id="auth-error" class="error hidden"></p>
-          <button type="submit" id="auth-submit" class="btn primary">
-            sign in
-          </button>
-        </form>
+  <!-- ── auth view ──────────────────────────────────────────── -->
+  <main id="auth-view" class="view">
+    <div class="auth-card">
+      <div class="brand">
+        <h1>beatsync</h1>
+        <p class="tagline">your scripts, backed up to the cloud.</p>
       </div>
-    </main>
 
-    <!-- ── main view ──────────────────────────────────────────── -->
-    <main id="main-view" class="view hidden">
-      <div class="app-shell">
+      <div class="tabs">
+        <button class="tab active" data-tab="signin">sign in</button>
+        <button class="tab" data-tab="signup">create account</button>
+      </div>
 
-        <!-- ── sidebar ──────────────────────────────────────── -->
-        <aside class="sidebar">
-          <!-- <div class="sidebar-brand">
+      <form id="auth-form" novalidate>
+        <div id="name-fields" class="name-fields hidden">
+          <label class="field">
+            <span>first name</span>
+            <input type="text" id="first-name" name="firstName" placeholder="jane" required autocomplete="given-name" />
+          </label>
+          <label class="field">
+            <span>last name</span>
+            <input type="text" id="last-name" name="lastName" placeholder="doe" required autocomplete="family-name" />
+          </label>
+        </div>
+        <label class="field">
+          <span>email</span>
+          <input type="email" id="email" name="email" placeholder="you@example.com" required autocomplete="email" />
+        </label>
+        <label class="field">
+          <span>password</span>
+          <input type="password" id="password" name="password" placeholder="at least 6 characters" required
+            autocomplete="current-password" />
+        </label>
+        <p id="auth-error" class="error hidden"></p>
+        <button type="submit" id="auth-submit" class="btn primary">
+          sign in
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <!-- ── main view ──────────────────────────────────────────── -->
+  <main id="main-view" class="view hidden">
+    <div class="app-shell">
+
+      <!-- ── sidebar ──────────────────────────────────────── -->
+      <aside class="sidebar">
+        <!-- <div class="sidebar-brand">
             <span>Beatsync</span>
           </div> -->
 
-          <nav class="sidebar-nav">
-            <div class="sidebar-section">
-              <!-- <p class="sidebar-label">Workspace</p> -->
-              <button class="sidebar-item active" data-view="activity">
-                <span class="icon icon-activity" aria-hidden="true"></span>
+        <nav class="sidebar-nav">
+          <div class="sidebar-section">
+            <!-- <p class="sidebar-label">Workspace</p> -->
+            <button class="sidebar-item active" data-view="activity">
+              <span class="icon icon-activity" aria-hidden="true"></span>
+              Activity
+              <span class="sidebar-badge hidden" id="sidebar-badge"></span>
+            </button>
+            <button class="sidebar-item" data-view="files">
+              <span class="icon icon-file" aria-hidden="true"></span>
+              Your files
+            </button>
+            <button class="sidebar-item" data-view="settings">
+              <span class="icon icon-settings" aria-hidden="true"></span>
+              Settings
+            </button>
+          </div>
+        </nav>
+
+      </aside>
+
+      <!-- ── content area ─────────────────────────────────── -->
+      <div class="app-content">
+
+        <!-- ── activity view ──────────────────────────────── -->
+        <div id="view-activity" class="content-view">
+
+          <div class="view-header">
+            <div class="view-header-left">
+              <h1 class="view-title">
                 Activity
-                <span class="sidebar-badge hidden" id="sidebar-badge"></span>
-              </button>
-              <button class="sidebar-item" data-view="files">
-                <span class="icon icon-file" aria-hidden="true"></span>
-                Your files
-              </button>
-              <button class="sidebar-item" data-view="settings">
-                <span class="icon icon-settings" aria-hidden="true"></span>
-                Settings
-              </button>
-            </div> 
-          </nav>
-
-        </aside>
-
-        <!-- ── content area ─────────────────────────────────── -->
-        <div class="app-content">
-
-          <!-- ── activity view ──────────────────────────────── -->
-          <div id="view-activity" class="content-view">
-
-            <div class="view-header">
-              <div class="view-header-left">
-                <h1 class="view-title">
-                  Activity
-                  <span class="sync-state" id="sync-state" data-state="idle">
-                    <span class="sync-dot"></span>
-                    <span id="sync-label" class="sync-pill-label">Not watching</span>
-                  </span>
-                </h1>
-                <p id="sync-meta" class="sync-meta"></p>
-              </div>
-              <div class="view-header-right">
-                <button id="start-sync" class="btn primary icon-text-btn">
-                  <span class="icon icon-plus" aria-hidden="true"></span>
-                  Start watching
-                </button>
-                <button id="stop-sync" class="btn danger icon-text-btn hidden">
-                  <span class="icon icon-stop" aria-hidden="true"></span>
-                  Stop watching
-                </button>
-              </div>
+                <span class="sync-state" id="sync-state" data-state="idle">
+                  <span class="sync-dot"></span>
+                  <span id="sync-label" class="sync-pill-label">Not watching</span>
+                </span>
+              </h1>
+              <p id="sync-meta" class="sync-meta"></p>
             </div>
-
-            <div class="view-body">
-              <!-- stat cards -->
-              <div class="stat-grid" id="stat-grid">
-                <div class="stat-card">
-                  <p class="stat-label">Tracked files</p>
-                  <p class="stat-val" id="stat-files">—</p>
-                </div>
-                <div class="stat-card">
-                  <p class="stat-label">Total size</p>
-                  <p class="stat-val" id="stat-size">—</p>
-                </div>
-                <div class="stat-card">
-                  <p class="stat-label">Last sync</p>
-                  <p class="stat-val" id="stat-last">—</p>
-                </div>
-              </div>
-
-              <!-- activity log -->
-              <section class="panel" id="panel-log">
-                <div class="panel-head">
-                  <h2>Live output</h2>
-                </div>
-                <div class="log-box" id="log-box"></div>
-              </section>
+            <div class="view-header-right">
+              <button id="start-sync" class="btn primary icon-text-btn">
+                <span class="icon icon-plus" aria-hidden="true"></span>
+                Start watching
+              </button>
+              <button id="stop-sync" class="btn danger icon-text-btn hidden">
+                <span class="icon icon-stop" aria-hidden="true"></span>
+                Stop watching
+              </button>
             </div>
           </div>
 
-          <!-- ── files view ──────────────────────────────────── -->
-          <div id="view-files" class="content-view hidden">
-            <div class="view-header">
-              <div class="view-header-left">
-                <h1 class="view-title">Your files</h1>
+          <div class="view-body">
+            <!-- stat cards -->
+            <div class="stat-grid" id="stat-grid">
+              <div class="stat-card">
+                <p class="stat-label">Tracked files</p>
+                <p class="stat-val" id="stat-files">—</p>
               </div>
-              <div class="view-header-right">
-                <button id="refresh-files" class="btn ghost small icon-text-btn">
-                  <span class="icon icon-refresh" aria-hidden="true"></span>
-                  Refresh
-                </button>
+              <div class="stat-card">
+                <p class="stat-label">Total size</p>
+                <p class="stat-val" id="stat-size">—</p>
+              </div>
+              <div class="stat-card">
+                <p class="stat-label">Last sync</p>
+                <p class="stat-val" id="stat-last">—</p>
               </div>
             </div>
-            <div class="view-body">
-              <section class="panel" id="panel-files" style="padding-top:0;">
-                <p id="files-empty" class="empty hidden">
-                  No files yet — pick a folder in Settings and start watching.
-                </p>
-                <table class="files" id="files-table">
-                  <thead>
-                    <tr>
-                      <th>File</th>
-                      <th>Last synced</th>
-                      <th>Size</th>
-                    </tr>
-                  </thead>
-                  <tbody id="files-body"></tbody>
-                </table>
-              </section>
-            </div>
+
+            <!-- activity log -->
+            <section class="panel" id="panel-log">
+              <div class="panel-head">
+                <h2>Live output</h2>
+              </div>
+              <div class="log-box" id="log-box"></div>
+            </section>
           </div>
-
-          <!-- ── settings view ──────────────────────────────── -->
-          <div id="view-settings" class="content-view hidden">
-            <div class="view-header">
-              <div class="view-header-left">
-                <h1 class="view-title">Settings</h1>
-              </div>
-            </div>
-            <div class="view-body">
-              <div class="settings-grid">
-
-                <!-- sync folder -->
-                <div class="setting-block setting-block-folder">
-                  <div class="setting-header">
-                    <h3 class="settings-heading">Sync folder</h3>
-                  </div>
-                  <div class="setting-body">
-                    <div class="field-stack">
-                      <input type="text" id="dir-input" class="setting-input"
-                        placeholder="No folder selected" readonly />
-                      <button id="choose-dir" class="btn secondary">
-                        Choose folder
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- file types -->
-                <div class="setting-block setting-block-types">
-                  <div class="setting-header">
-                    <h3 class="settings-heading">File types</h3>
-                  </div>
-                  <div class="setting-body">
-                    <div class="field-stack">
-                      <input type="text" id="extensions-input" class="setting-input"
-                        placeholder=".fountain,.txt" value=".fountain" />
-                      <span class="field-caption">Comma-separated extensions</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- appearance -->
-                <div class="setting-block setting-block-theme">
-                  <div class="setting-header">
-                    <h3 class="settings-heading">Appearance</h3>
-                  </div>
-                  <div class="setting-body">
-                    <p class="setting-desc">Choose the interface color theme.</p>
-                    <div class="theme-toggle-group" role="group" aria-label="theme">
-                      <button type="button" class="theme-option btn secondary"
-                        data-theme-option="dark" aria-pressed="true">
-                        Dark
-                      </button>
-                      <button type="button" class="theme-option btn secondary"
-                        data-theme-option="light" aria-pressed="false">
-                        Light
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- encryption -->
-                <div class="setting-block setting-block-encryption">
-                  <div class="setting-header">
-                    <h3 class="settings-heading">Encryption</h3>
-                    <span id="enc-status" class="status" data-state="idle">
-                      <span class="dot"></span>
-                      <span id="enc-status-text">no key</span>
-                    </span>
-                  </div>
-                  <div class="setting-body">
-                    <p class="setting-desc">
-                      Your files are encrypted on your device before upload.
-                      We never see your key.
-                    </p>
-                    <details class="setting-details">
-                      <summary>Why this matters</summary>
-                      <p class="setting-details-body">
-                        If you lose your key, stored documents cannot be
-                        recovered. Keep a copy somewhere safe.
-                      </p>
-                    </details>
-                    <div class="field-stack">
-                      <input type="password" id="enc-key-input" class="setting-input"
-                        placeholder="Paste your encryption key…" autocomplete="off" />
-                      <div class="setting-actions">
-                        <button id="enc-generate" class="btn secondary icon-text-btn">
-                          <span class="icon icon-key" aria-hidden="true"></span>
-                          Generate
-                        </button>
-                        <button id="enc-save" class="btn primary">Save key</button>
-                        <button id="enc-clear"
-                          class="btn ghost danger-text icon-text-btn hidden">
-                          <span class="icon icon-trash" aria-hidden="true"></span>
-                          Clear
-                        </button>
-                      </div>
-                    </div>
-                    <div id="enc-generated" class="enc-generated hidden">
-                      <p class="setting-desc warning">
-                        Copy this somewhere safe — it won't be shown again.
-                      </p>
-                      <div class="field-stack">
-                        <input type="text" id="enc-generated-value"
-                          class="setting-input" readonly />
-                        <button id="enc-copy" class="btn secondary small">
-                          Copy key
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- account -->
-                <div class="setting-block setting-block-account">
-                  <div class="setting-header">
-                    <h3 class="settings-heading">Account</h3>
-                  </div>
-                  <div class="setting-body">
-                    <p class="setting-desc" id="user-email"></p>
-                    <button id="sign-out" class="btn danger">Sign out</button>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-          </div>
-
         </div>
-        <!-- /app-content -->
+
+        <!-- ── files view ──────────────────────────────────── -->
+        <div id="view-files" class="content-view hidden">
+          <div class="view-header">
+            <div class="view-header-left">
+              <h1 class="view-title">Your files</h1>
+            </div>
+            <div class="view-header-right">
+              <button id="refresh-files" class="btn ghost small icon-text-btn">
+                <span class="icon icon-refresh" aria-hidden="true"></span>
+                Refresh
+              </button>
+            </div>
+          </div>
+          <div class="view-body">
+            <section class="panel" id="panel-files" style="padding-top:0;">
+              <p id="files-empty" class="empty hidden">
+                No files yet — pick a folder in Settings and start watching.
+              </p>
+              <table class="files" id="files-table">
+                <thead>
+                  <tr>
+                    <th>File</th>
+                    <th>Last synced</th>
+                    <th>Size</th>
+                  </tr>
+                </thead>
+                <tbody id="files-body"></tbody>
+              </table>
+            </section>
+          </div>
+        </div>
+
+        <!-- ── settings view ──────────────────────────────── -->
+        <div id="view-settings" class="content-view hidden">
+          <div class="view-header">
+            <div class="view-header-left">
+              <h1 class="view-title">Settings</h1>
+            </div>
+          </div>
+          <div class="view-body">
+            <div class="settings-grid">
+
+              <!-- sync folder -->
+              <div class="setting-block setting-block-folder">
+                <div class="setting-header">
+                  <h3 class="settings-heading">Sync folder</h3>
+                </div>
+                <div class="setting-body">
+                  <div class="field-stack">
+                    <input type="text" id="dir-input" class="setting-input" placeholder="No folder selected" readonly />
+                    <button id="choose-dir" class="btn secondary">
+                      Choose folder
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- file types -->
+              <div class="setting-block setting-block-types">
+                <div class="setting-header">
+                  <h3 class="settings-heading">File types</h3>
+                </div>
+                <div class="setting-body">
+                  <div class="field-stack">
+                    <input type="text" id="extensions-input" class="setting-input" placeholder=".fountain,.txt"
+                      value=".fountain" />
+                    <span class="field-caption">Comma-separated extensions</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- appearance -->
+              <div class="setting-block setting-block-theme">
+                <div class="setting-header">
+                  <h3 class="settings-heading">Appearance</h3>
+                </div>
+                <div class="setting-body">
+                  <p class="setting-desc">Choose the interface color theme.</p>
+                  <div class="theme-toggle-group" role="group" aria-label="theme">
+                    <button type="button" class="theme-option btn secondary" data-theme-option="dark"
+                      aria-pressed="true">
+                      Dark
+                    </button>
+                    <button type="button" class="theme-option btn secondary" data-theme-option="light"
+                      aria-pressed="false">
+                      Light
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- encryption -->
+              <div class="setting-block setting-block-encryption">
+                <div class="setting-header">
+                  <h3 class="settings-heading">Encryption</h3>
+                  <span id="enc-status" class="status" data-state="idle">
+                    <span class="dot"></span>
+                    <span id="enc-status-text">no key</span>
+                  </span>
+                </div>
+                <div class="setting-body">
+                  <p class="setting-desc">
+                    Your files are encrypted on your device before upload.
+                    We never see your key.
+                  </p>
+                  <details class="setting-details">
+                    <summary>Why this matters</summary>
+                    <p class="setting-details-body">
+                      If you lose your key, stored documents cannot be
+                      recovered. Keep a copy somewhere safe.
+                    </p>
+                  </details>
+                  <div class="field-stack">
+                    <input type="password" id="enc-key-input" class="setting-input"
+                      placeholder="Paste your encryption key…" autocomplete="off" />
+                    <div class="setting-actions">
+                      <button id="enc-generate" class="btn secondary icon-text-btn">
+                        <span class="icon icon-key" aria-hidden="true"></span>
+                        Generate
+                      </button>
+                      <button id="enc-save" class="btn primary">Save key</button>
+                      <button id="enc-clear" class="btn ghost danger-text icon-text-btn hidden">
+                        <span class="icon icon-trash" aria-hidden="true"></span>
+                        Clear
+                      </button>
+                    </div>
+                  </div>
+                  <div id="enc-generated" class="enc-generated hidden">
+                    <p class="setting-desc warning">
+                      Copy this somewhere safe — it won't be shown again.
+                    </p>
+                    <div class="field-stack">
+                      <input type="text" id="enc-generated-value" class="setting-input" readonly />
+                      <button id="enc-copy" class="btn secondary small">
+                        Copy key
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- account -->
+              <div class="setting-block setting-block-account">
+                <div class="setting-header">
+                  <h3 class="settings-heading">Account</h3>
+                </div>
+                <div class="setting-body">
+                  <p class="setting-desc" id="user-email"></p>
+                  <button id="sign-out" class="btn danger">Sign out</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
       </div>
-      <!-- /app-shell -->
-    </main>
+      <!-- /app-content -->
+    </div>
+    <!-- /app-shell -->
+  </main>
 
-    <div id="toast-host" class="toast-host" aria-live="polite"></div>
+  <div id="toast-host" class="toast-host" aria-live="polite"></div>
 
-    <script src="app.js"></script>
-  </body>
+  <script src="app.js"></script>
+</body>
+
 </html>

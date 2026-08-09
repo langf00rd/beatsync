@@ -58,7 +58,7 @@ class SupabaseSyncClient {
         } catch (err) {
           throw new Error(
             `failed to decrypt ${doc.path} — the saved encryption key is wrong. ` +
-              `changes won't sync until the correct key is set in the encryption section.`,
+            `changes won't sync until the correct key is set in the encryption section.`,
           );
         }
       } else {
@@ -131,7 +131,7 @@ class SupabaseSyncClient {
 
   async _withRetry(operation) {
     let attempt = 0;
-    for (;;) {
+    for (; ;) {
       const { error } = await operation();
       if (!error) return;
 
@@ -139,9 +139,9 @@ class SupabaseSyncClient {
       if (attempt >= MAX_RETRIES || NON_RETRYABLE_CODES.has(error.code)) {
         throw new Error(
           `supabase operation failed: ${error.message}` +
-            (error.code ? ` [code: ${error.code}]` : "") +
-            (error.details ? ` details: ${error.details}` : "") +
-            (error.hint ? ` hint: ${error.hint}` : ""),
+          (error.code ? ` [code: ${error.code}]` : "") +
+          (error.details ? ` details: ${error.details}` : "") +
+          (error.hint ? ` hint: ${error.hint}` : ""),
         );
       }
       await sleep(BASE_BACKOFF_MS * 2 ** (attempt - 1));
