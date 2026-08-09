@@ -25,14 +25,12 @@
       </p>
 
       <div class="cta">
-        <a id="download-btn" class="btn primary"
+        <a class="btn primary"
           href="https://github.com/langf00rd/beatsync/releases/latest"
           target="_blank" rel="noopener">
-          Download for macOS
+          Download
         </a>
       </div>
-
-      <div id="platform-buttons" class="platform-buttons"></div>
 
       <p class="caption">free &amp; open source · macOS · Windows · Linux</p>
     </div>
@@ -150,57 +148,5 @@
     </p>
   </footer>
 
-  <script>
-    const REPO = "langf00rd/beatsync";
-
-    async function loadDownload() {
-      const btn = document.getElementById("download-btn");
-      const platformRow = document.getElementById("platform-buttons");
-
-      try {
-        const res = await fetch(
-          `https://api.github.com/repos/${REPO}/releases/latest`,
-          { headers: { Accept: "application/vnd.github+json" } },
-        );
-        if (!res.ok) throw new Error("release not found");
-        const release = await res.json();
-        const urls = (release.assets || []).map((a) => a.browser_download_url);
-
-        const isArm = (u) => /arm64/i.test(u);
-        const dmg      = urls.find((u) => u.endsWith(".dmg") && isArm(u));
-        const intelDmg = urls.find((u) => u.endsWith(".dmg") && !isArm(u));
-        const win      = urls.find((u) => /\.exe$/i.test(u));
-        const linux    = urls.find((u) => /\.AppImage$/i.test(u));
-
-        // Primary button gets the best available platform
-        let primaryUrl;
-        if (dmg)        { primaryUrl = dmg;    btn.href = dmg;    btn.textContent = "Download for macOS"; }
-        else if (win)   { primaryUrl = win;    btn.href = win;    btn.textContent = "Download for Windows"; }
-        else if (linux) { primaryUrl = linux;  btn.href = linux;  btn.textContent = "Download for Linux"; }
-
-        // Secondary buttons: all platforms except whichever is already the primary
-        const platforms = [
-          { label: "macOS (Apple Silicon)", url: dmg },
-          { label: "macOS (Intel)",         url: intelDmg },
-          { label: "Windows",               url: win },
-          { label: "Linux",                 url: linux },
-        ].filter((p) => p.url && p.url !== primaryUrl);
-
-        for (const p of platforms) {
-          const a = document.createElement("a");
-          a.className   = "btn secondary";
-          a.href        = p.url;
-          a.target      = "_blank";
-          a.rel         = "noopener";
-          a.textContent = p.label;
-          platformRow.appendChild(a);
-        }
-      } catch {
-        btn.textContent = "Download beatsync";
-      }
-    }
-
-    loadDownload();
-  </script>
 </body>
 </html>

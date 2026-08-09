@@ -95,16 +95,6 @@ body {
   color: var(--accent);
 }
 
-.platform-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.platform-buttons:empty { margin-bottom: 0; }
-
 .caption {
   color: var(--text-dim);
   font-size: 13px;
