@@ -13,6 +13,7 @@
   --surface-2: #1c1c1c;
   --border: #2a2a2a;
   --border-hi: #3d3d3d;
+  --card: #141414;
 
   --text: #f0ede6;
   --text-dim: #7a7870;
@@ -34,6 +35,7 @@
   --surface-2: #f7f7f7;
   --border: #e5e5e5;
   --border-hi: #d0d0d0;
+  --card: #f9f9f9;
 
   --text: #111111;
   --text-dim: #666666;
@@ -504,8 +506,10 @@ input[readonly] {
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  padding: 24px 28px 20px;
-  border-bottom: 1px solid var(--border);
+  padding-top: 10px;
+  padding-right: 20px;
+  margin-bottom: -6px;
+  /* border-bottom: 1px solid var(--border); */
   flex-shrink: 0;
 }
 
@@ -520,6 +524,7 @@ input[readonly] {
   gap: 8px;
   flex-shrink: 0;
   padding-top: 4px;
+  margin-left: auto;
 }
 
 .view-title {
@@ -620,7 +625,7 @@ input[readonly] {
 }
 
 .stat-card {
-  background: var(--surface);
+  background: var(--card);
   border: 1px solid var(--border);
   border-radius: 2px;
   padding: 14px;
@@ -648,6 +653,7 @@ input[readonly] {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  margin-top: 32px;
 }
 
 .panel-head {
@@ -668,7 +674,7 @@ input[readonly] {
 /* ── Log ────────────────────────────────────────────────────── */
 
 .log-box {
-  background: var(--surface);
+  background: var(--card);
   border: 1px solid var(--border);
   padding: 12px;
   max-height: 360px;
