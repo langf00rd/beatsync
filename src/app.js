@@ -36,12 +36,96 @@ const encGenerated = $("enc-generated");
 const encGeneratedValue = $("enc-generated-value");
 const encCopyBtn = $("enc-copy");
 const toastHost = $("toast-host");
+const syncChip = $("sync-chip");
+const syncChipState = $("sync-chip-state");
+const syncChipPath = $("sync-chip-path");
+const userEmail = $("user-email");
+const statFiles = $("stat-files");
+const statSize = $("stat-size");
+const statLast = $("stat-last");
+const sidebarBadge = $("sidebar-badge");
+const sidebarItems = document.querySelectorAll(".sidebar-item");
+const contentViews = document.querySelectorAll(".content-view");
 
 const TOAST_DURATION_MS = 6000;
 
 let authMode = "signin";
 let watching = false;
 let documents = [];
+let activeView = "activity";
+
+const THEME_STORAGE_KEY = "beatsync-theme";
+const themeOptions = document.querySelectorAll("[data-theme-option]");
+let currentTheme = "dark";
+
+function updateThemeButtons(theme) {
+  themeOptions.forEach((button) => {
+    const isActive = button.dataset.themeOption === theme;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+}
+
+function applyTheme(theme) {
+  const nextTheme = theme === "light" ? "light" : "dark";
+  currentTheme = nextTheme;
+  document.documentElement.setAttribute("data-theme", nextTheme);
+  document.body.setAttribute("data-theme", nextTheme);
+
+  try {
+    window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+  } catch {}
+
+  updateThemeButtons(nextTheme);
+}
+
+function initTheme() {
+  let savedTheme = "dark";
+  try {
+    savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY) ?? "dark";
+  } catch {}
+  applyTheme(savedTheme);
+}
+
+function setActiveView(viewName) {
+  activeView = viewName;
+  sidebarItems.forEach((item) => {
+    const isActive = item.dataset.view === viewName;
+    item.classList.toggle("active", isActive);
+  });
+
+  contentViews.forEach((view) => {
+    view.classList.toggle("hidden", view.id !== `view-${viewName}`);
+  });
+}
+
+function setUserEmail(email) {
+  if (!userEmail) return;
+  userEmail.textContent = email
+    ? `Signed in as ${email}`
+    : "Sign in to sync your files.";
+}
+
+function updateSummary() {
+  if (!statFiles || !statSize || !statLast) return;
+
+  const trackedCount = documents.length;
+  const totalSize = documents.reduce((sum, doc) => sum + (doc.content?.length ?? 0), 0);
+  const lastUpdated = documents.reduce((latest, doc) => {
+    if (!doc.updated_at) return latest;
+    if (!latest) return doc.updated_at;
+    return doc.updated_at > latest ? doc.updated_at : latest;
+  }, "");
+
+  statFiles.textContent = trackedCount > 0 ? trackedCount : "—";
+  statSize.textContent = trackedCount > 0 ? formatBytes(totalSize) : "—";
+  statLast.textContent = lastUpdated ? formatTime(lastUpdated) : "—";
+
+  if (sidebarBadge) {
+    sidebarBadge.textContent = trackedCount > 0 ? String(trackedCount) : "";
+    sidebarBadge.classList.toggle("hidden", trackedCount === 0);
+  }
+}
 
 // ---------------------------------------------------------------------------
 // auth
@@ -142,6 +226,7 @@ function showAuthError(message) {
 signOutBtn.addEventListener("click", async () => {
   await api.signOut();
   resetToIdle();
+  setUserEmail("");
   showAuth();
 });
 
@@ -331,6 +416,7 @@ async function refreshDocuments() {
   }
   documents = result.documents ?? [];
   renderFiles();
+  updateSummary();
 }
 
 function renderFiles() {
@@ -367,15 +453,25 @@ function renderFiles() {
 function setStatus(state, text) {
   syncState.dataset.state = state;
   syncMeta.classList.toggle("sync-meta-error", state === "error");
+  if (syncChip) {
+    syncChip.dataset.state = state;
+  }
+
   if (state === "watching") {
     syncLabel.textContent = "watching";
     syncMeta.textContent = dirInput.value || "";
+    if (syncChipState) syncChipState.textContent = "Watching";
+    if (syncChipPath) syncChipPath.textContent = dirInput.value || "";
   } else if (state === "error") {
     syncLabel.textContent = "error";
     syncMeta.textContent = text;
+    if (syncChipState) syncChipState.textContent = "Error";
+    if (syncChipPath) syncChipPath.textContent = text;
   } else {
     syncLabel.textContent = "not watching";
     syncMeta.textContent = "";
+    if (syncChipState) syncChipState.textContent = "Not watching";
+    if (syncChipPath) syncChipPath.textContent = "";
   }
 }
 
@@ -480,6 +576,9 @@ function formatTime(iso) {
 // ---------------------------------------------------------------------------
 
 (async function init() {
+  setStatus("idle", "not watching");
+  setActiveView("activity");
+
   const saved = await api.getConfig();
   if (saved.watchDir) {
     dirInput.value = saved.watchDir;
@@ -487,6 +586,7 @@ function formatTime(iso) {
 
   const restored = await api.restoreSession();
   if (restored.ok) {
+    setUserEmail(restored.session?.email ?? "");
     showMain();
     // resume watching from the last session if possible, then sync the
     // controls with whatever state the main process is actually in (the
@@ -494,6 +594,7 @@ function formatTime(iso) {
     await api.autoResume();
     await syncUiFromMain();
   } else {
+    setUserEmail("");
     showAuth();
   }
 })();
@@ -511,12 +612,16 @@ async function syncUiFromMain() {
   }
 }
 
-const settingsToggle = document.getElementById("settings-toggle");
-const settingsDrawer = document.getElementById("settings-drawer");
+initTheme();
 
-settingsToggle.addEventListener("click", () => {
-  const isOpen = settingsDrawer.classList.toggle("open");
-  settingsToggle.setAttribute("aria-expanded", String(isOpen));
-  // remove .hidden on first open (it starts hidden via class, then CSS handles show/hide)
-  settingsDrawer.classList.remove("hidden");
+themeOptions.forEach((button) => {
+  button.addEventListener("click", () => {
+    applyTheme(button.dataset.themeOption);
+  });
+});
+
+sidebarItems.forEach((item) => {
+  item.addEventListener("click", () => {
+    setActiveView(item.dataset.view);
+  });
 });
