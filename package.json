@@ -8,7 +8,7 @@
     "dev": "node scripts/inject-config.js && electron . --dev",
     "inject-config": "node scripts/inject-config.js",
     "build": "node scripts/inject-config.js && electron-builder",
-    "build:mac": "node scripts/inject-config.js && electron-builder --mac",
+    "build:mac": "node scripts/inject-config.js && electron-builder --mac --publish never",
     "build:win": "node scripts/inject-config.js && electron-builder --win",
     "build:linux": "node scripts/inject-config.js && electron-builder --linux",
     "release": "node scripts/release.js",

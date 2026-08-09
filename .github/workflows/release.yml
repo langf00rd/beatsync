@@ -28,10 +28,13 @@ jobs:
 
       - name: build
         run: npm run build:mac
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
 
-      - name: create gitHub release
+      - name: create github release
         uses: softprops/action-gh-release@v2
         with:
+          token: ${{ github.token }}
           generate_release_notes: true
           files: |
             dist/*.dmg
