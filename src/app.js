@@ -448,6 +448,7 @@ function renderFiles() {
 // ---------------------------------------------------------------------------
 
 function setStatus(state, text) {
+  if (!syncState || !syncLabel || !syncMeta) return;
   syncState.dataset.state = state;
   syncMeta.classList.toggle("sync-meta-error", state === "error");
 
@@ -564,26 +565,36 @@ function formatTime(iso) {
 // ---------------------------------------------------------------------------
 
 (async function init() {
-  setStatus("idle", "not watching");
-  setActiveView("activity");
+  const splash = $("boot-splash");
 
-  const saved = await api.getConfig();
-  if (saved.watchDir) {
-    dirInput.value = saved.watchDir;
-  }
+  try {
+    // restore everything before revealing any view so a signed-in user never
+    // sees the login screen, even for a frame.
+    const saved = await api.getConfig();
+    if (saved.watchDir) {
+      dirInput.value = saved.watchDir;
+    }
 
-  const restored = await api.restoreSession();
-  if (restored.ok) {
-    setUserEmail(restored.session?.email ?? "");
-    showMain();
-    // resume watching from the last session if possible, then sync the
-    // controls with whatever state the main process is actually in (the
-    // watcher may already be running from a previous launch or the tray).
-    await api.autoResume();
-    await syncUiFromMain();
-  } else {
+    const restored = await api.restoreSession();
+    setActiveView("activity");
+
+    if (restored.ok) {
+      setUserEmail(restored.session?.email ?? "");
+      showMain();
+      // resume watching from the last session if possible, then sync the
+      // controls with whatever state the main process is actually in (the
+      // watcher may already be running from a previous launch or the tray).
+      await api.autoResume();
+      await syncUiFromMain();
+    } else {
+      setUserEmail("");
+      showAuth();
+    }
+  } catch (err) {
     setUserEmail("");
     showAuth();
+  } finally {
+    if (splash) splash.classList.add("hidden");
   }
 })();
 
