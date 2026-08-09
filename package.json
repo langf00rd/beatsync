@@ -26,6 +26,27 @@
   "build": {
     "appId": "com.beatsync.app",
     "publish": null,
-    "productName": "beatsync"
+    "productName": "beatsync",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.productivity",
+      "icon": "assets/logo.png"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "assets/logo.png"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "assets/logo.png"
+    }
   }
 }
