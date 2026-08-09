@@ -36,9 +36,6 @@ const encGenerated = $("enc-generated");
 const encGeneratedValue = $("enc-generated-value");
 const encCopyBtn = $("enc-copy");
 const toastHost = $("toast-host");
-const syncChip = $("sync-chip");
-const syncChipState = $("sync-chip-state");
-const syncChipPath = $("sync-chip-path");
 const userEmail = $("user-email");
 const statFiles = $("stat-files");
 const statSize = $("stat-size");
@@ -278,13 +275,13 @@ encCopyBtn.addEventListener("click", async () => {
     document.execCommand("copy");
     ta.remove();
   }
-  addLog("key copied to clipboard", "synced");
+  addLog("synced: key copied", "synced");
 });
 
 encSaveBtn.addEventListener("click", async () => {
   const key = encKeyInput.value.trim();
   if (!key) {
-    addLog("paste or generate a key first", "error");
+    addLog("error: key missing", "error");
     return;
   }
   const result = await api.encryption.set(key);
@@ -296,7 +293,7 @@ encSaveBtn.addEventListener("click", async () => {
   encGenerated.classList.add("hidden");
   await initEncryption();
   refreshDocuments();
-  addLog("encryption key saved", "synced");
+  addLog("synced: key saved", "synced");
 });
 
 encClearBtn.addEventListener("click", async () => {
@@ -310,7 +307,7 @@ encClearBtn.addEventListener("click", async () => {
   await api.encryption.clear();
   encClearBtn.classList.add("hidden");
   setEncStatus("none");
-  addLog("encryption key cleared");
+  addLog("synced: key cleared", "synced");
 });
 
 // ---------------------------------------------------------------------------
@@ -352,7 +349,7 @@ startSyncBtn.addEventListener("click", async () => {
   }
 
   if (result.pulled > 0) {
-    addLog(`pulled ${result.pulled} file(s) from the cloud`, "synced");
+    addLog(`synced: pulled ${result.pulled} files`, "synced");
   }
   refreshDocuments();
 });
@@ -381,7 +378,7 @@ api.onWatcherStarted(({ rootDir }) => {
   dirInput.value = rootDir;
   startSyncBtn.classList.add("hidden");
   stopSyncBtn.classList.remove("hidden");
-  addLog(`[watching] changes sync automatically.`);
+  addLog("watching: changes");
 });
 
 api.onWatcherStopped(() => {
@@ -411,7 +408,7 @@ api.onDocDeleted(({ relativePath }) => {
 async function refreshDocuments() {
   const result = await api.listDocuments();
   if (!result.ok) {
-    addLog(`failed to load files: ${result.error}`, "error");
+    addLog(`error: files load failed: ${result.error}`, "error");
     return;
   }
   documents = result.documents ?? [];
@@ -453,25 +450,16 @@ function renderFiles() {
 function setStatus(state, text) {
   syncState.dataset.state = state;
   syncMeta.classList.toggle("sync-meta-error", state === "error");
-  if (syncChip) {
-    syncChip.dataset.state = state;
-  }
 
   if (state === "watching") {
     syncLabel.textContent = "watching";
     syncMeta.textContent = dirInput.value || "";
-    if (syncChipState) syncChipState.textContent = "Watching";
-    if (syncChipPath) syncChipPath.textContent = dirInput.value || "";
   } else if (state === "error") {
     syncLabel.textContent = "error";
     syncMeta.textContent = text;
-    if (syncChipState) syncChipState.textContent = "Error";
-    if (syncChipPath) syncChipPath.textContent = text;
   } else {
     syncLabel.textContent = "not watching";
     syncMeta.textContent = "";
-    if (syncChipState) syncChipState.textContent = "Not watching";
-    if (syncChipPath) syncChipPath.textContent = "";
   }
 }
 

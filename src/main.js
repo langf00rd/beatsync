@@ -10,6 +10,7 @@ const {
 } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs");
+const chokidar = require("chokidar");
 const { createClient } = require("@supabase/supabase-js");
 const { WebSocket } = require("ws");
 const { SupabaseSyncClient } = require("./sync.js");
@@ -46,7 +47,9 @@ let watcher = null;
 let watchDir = null;
 let encryptionKey = null;
 let tray = null;
+let devReloadWatcher = null;
 let isQuitting = false;
+const isDev = process.argv.includes("--dev");
 
 const statePath = () => path.join(app.getPath("userData"), "state.json");
 const sessionPath = () => path.join(app.getPath("userData"), "session.json");
@@ -98,6 +101,10 @@ function createWindow() {
   });
 
   mainWindow.loadFile(path.join(__dirname, "index.html"));
+
+  if (isDev) {
+    mainWindow.webContents.openDevTools({ mode: "undocked" });
+  }
 
   // closing the window hides it to the menu bar instead of stopping the sync:
   // beatsync keeps watching in the background and the tray "open beatsync"
@@ -187,7 +194,7 @@ async function trayStartWatching() {
       dir = result.filePaths[0];
     }
     await startWatchingFlow({ dir, extensions: saved.extensions });
-    sendLog(`watching ${dir} — started from the menu bar.`);
+    sendLog(`watching: ${dir}`);
   } catch (err) {
     const { response } = await dialog.showMessageBox({
       type: "warning",
@@ -280,7 +287,7 @@ async function authenticate({ email, password, signUp, firstName, lastName }) {
   try {
     await client.from("profiles").upsert(profile, { onConflict: "id" });
   } catch (err) {
-    sendLog(`failed to update profile: ${err.message}`);
+    sendLog(`error: profile update failed: ${err.message}`);
   }
 
   return { email: data.user.email ?? email };
@@ -455,10 +462,10 @@ async function startWatchingFlow({ dir, extensions }) {
   syncClient = new SupabaseSyncClient(supabase, userId, encryptionKey);
   const { pulled, migrated } = await syncClient.pullMissingFiles(dir);
   if (pulled > 0) {
-    sendLog(`pulled ${pulled} file(s) from beatsync cloud`);
+    sendLog(`synced: pulled ${pulled} files`);
   }
   if (migrated > 0) {
-    sendLog(`re-encrypted ${migrated} legacy file(s)`);
+    sendLog(`synced: re-encrypted ${migrated} legacy files`);
   }
 
   // first successful sync (or a legacy account with no fingerprint yet):
@@ -539,11 +546,11 @@ ipcMain.handle("sync:autoResume", async () => {
       extensions: saved.extensions,
     });
     if (pulled > 0) {
-      sendLog(`pulled ${pulled} file(s) from beatsync cloud`);
+      sendLog(`synced: pulled ${pulled} files`);
     }
     return { ok: true, resumed: true };
   } catch (err) {
-    sendLog(`auto-resume failed: ${err.message}`);
+    sendLog(`error: resume failed: ${err.message}`);
     return { ok: false, error: err.message };
   }
 });
@@ -705,6 +712,10 @@ app.whenReady().then(() => {
   createWindow();
   createTray();
 
+  if (isDev) {
+    setupDevReload();
+  }
+
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
@@ -713,6 +724,38 @@ app.whenReady().then(() => {
     }
   });
 });
+
+function setupDevReload() {
+  const watchPaths = [
+    path.join(__dirname, "index.html"),
+    path.join(__dirname, "styles.css"),
+    path.join(__dirname, "app.js"),
+    path.join(__dirname, "preload.js"),
+    path.join(__dirname, "main.js"),
+    path.join(__dirname, "crypto.js"),
+    path.join(__dirname, "sync.js"),
+    path.join(__dirname, "watcher.js"),
+  ];
+
+  devReloadWatcher = chokidar.watch(watchPaths, {
+    ignoreInitial: true,
+    awaitWriteFinish: { stabilityThreshold: 200, pollInterval: 100 },
+  });
+
+  devReloadWatcher.on("change", (filePath) => {
+    const file = path.basename(filePath);
+
+    if (file === "main.js" || file === "preload.js" || file === "crypto.js" || file === "sync.js" || file === "watcher.js") {
+      app.relaunch({ args: process.argv.slice(1) });
+      app.exit(0);
+      return;
+    }
+
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.reloadIgnoringCache();
+    }
+  });
+}
 
 app.on("before-quit", () => {
   isQuitting = true;

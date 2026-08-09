@@ -69,42 +69,29 @@
 
         <!-- ── sidebar ──────────────────────────────────────── -->
         <aside class="sidebar">
-          <div class="sidebar-brand">
+          <!-- <div class="sidebar-brand">
             <span>Beatsync</span>
-          </div>
+          </div> -->
 
           <nav class="sidebar-nav">
             <div class="sidebar-section">
-              <p class="sidebar-label">Workspace</p>
+              <!-- <p class="sidebar-label">Workspace</p> -->
               <button class="sidebar-item active" data-view="activity">
                 <span class="icon icon-activity" aria-hidden="true"></span>
                 Activity
                 <span class="sidebar-badge hidden" id="sidebar-badge"></span>
               </button>
               <button class="sidebar-item" data-view="files">
-                <span class="icon icon-cloud" aria-hidden="true"></span>
+                <span class="icon icon-file" aria-hidden="true"></span>
                 Your files
               </button>
-            </div>
-            <div class="sidebar-section">
-              <p class="sidebar-label">Config</p>
               <button class="sidebar-item" data-view="settings">
                 <span class="icon icon-settings" aria-hidden="true"></span>
                 Settings
               </button>
-            </div>
+            </div> 
           </nav>
 
-          <!-- sync status chip — always visible -->
-          <div class="sidebar-footer">
-            <div class="sync-chip" id="sync-chip" data-state="idle">
-              <span class="sync-chip-dot"></span>
-              <div class="sync-chip-info">
-                <span class="sync-chip-state" id="sync-chip-state">Not watching</span>
-                <span class="sync-chip-path" id="sync-chip-path"></span>
-              </div>
-            </div>
-          </div>
         </aside>
 
         <!-- ── content area ─────────────────────────────────── -->

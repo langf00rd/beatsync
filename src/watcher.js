@@ -58,24 +58,21 @@ class DirectoryWatcher extends EventEmitter {
         this._handleDelete(absPath);
       })
       .on("error", (err) => {
-        this.logger.error("watcher error:", err);
+        this.logger.error(`error: watcher: ${err?.message || err}`);
       })
       .on("ready", () => {
         initialScanDone = true;
 
-        this.logger.log(`scan complete: found ${initialScanCount} file(s)`);
+        this.logger.log(`scan: ${initialScanCount} files`);
 
         if (initialScanCount === 0) {
           this.logger.log(
-            `no files matching ${[...this.extensions].join(", ")} found. ` +
-              `if you expected existing files to sync, check the extension and path is right.`,
+            `no files for ${[...this.extensions].join(", ")}`,
           );
         }
       });
 
-    this.logger.log(
-      `[watching] for changes to ${[...this.extensions].join(", ")}`,
-    );
+    this.logger.log(`watching: ${[...this.extensions].join(", ")}`);
 
     return this._watcher;
   }
@@ -91,7 +88,7 @@ class DirectoryWatcher extends EventEmitter {
 
   _scheduleSync(absPath) {
     if (!this._matchesExtension(absPath)) {
-      this.logger.log(`[skip] ${absPath} — extension not in watch list`);
+      this.logger.log(`skip: ${path.relative(this.rootDir, absPath)}`);
       return;
     }
 
@@ -118,7 +115,7 @@ class DirectoryWatcher extends EventEmitter {
       // a file can vanish between the debounce firing and the read (race
       // with a delete/rename) — that's not a real failure, just a miss.
       if (err.code === "ENOENT") return;
-      this.logger.error(`failed to sync ${relPath}:`, err.message);
+      this.logger.error(`error: sync ${relPath}: ${err.message}`);
     }
   }
 
@@ -130,10 +127,10 @@ class DirectoryWatcher extends EventEmitter {
 
     try {
       await this.syncClient.delete(relPath);
-      this.logger.log(`deleted remotely: ${relPath}`);
+      this.logger.log(`deleted: ${relPath}`);
       this.emit("delete", { relativePath: relPath });
     } catch (err) {
-      this.logger.error(`failed to delete ${relPath} remotely:`, err.message);
+      this.logger.error(`error: delete ${relPath}: ${err.message}`);
     }
   }
 
