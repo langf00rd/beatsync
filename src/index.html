@@ -185,9 +185,14 @@
                 <div class="setting-body">
                   <div class="field-stack">
                     <input type="text" id="dir-input" class="setting-input" placeholder="No folder selected" readonly />
-                    <button id="choose-dir" class="btn secondary">
-                      Choose folder
-                    </button>
+                    <div class="setting-actions">
+                      <button id="choose-dir" class="btn secondary">
+                        Choose folder
+                      </button>
+                      <button id="save-dir" class="btn primary hidden">
+                        Save
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -202,6 +207,9 @@
                     <input type="text" id="extensions-input" class="setting-input" placeholder=".fountain,.txt"
                       value=".fountain" />
                     <span class="field-caption">Comma-separated extensions</span>
+                    <button id="save-extensions" class="btn primary hidden">
+                      Save
+                    </button>
                   </div>
                 </div>
               </div>

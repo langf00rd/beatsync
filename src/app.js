@@ -16,9 +16,11 @@ const tabs = document.querySelectorAll(".tab");
 const signOutBtn = $("sign-out");
 const dirInput = $("dir-input");
 const chooseDirBtn = $("choose-dir");
+const saveDirBtn = $("save-dir");
 const startSyncBtn = $("start-sync");
 const stopSyncBtn = $("stop-sync");
 const extensionsInput = $("extensions-input");
+const saveExtensionsBtn = $("save-extensions");
 const syncState = $("sync-state");
 const syncLabel = $("sync-label");
 const syncMeta = $("sync-meta");
@@ -50,6 +52,8 @@ let authMode = "signin";
 let watching = false;
 let documents = [];
 let activeView = "activity";
+let savedDir = "";
+let savedExtensions = "";
 
 const THEME_STORAGE_KEY = "beatsync-theme";
 const themeOptions = document.querySelectorAll("[data-theme-option]");
@@ -316,8 +320,18 @@ encClearBtn.addEventListener("click", async () => {
 
 chooseDirBtn.addEventListener("click", async () => {
   const dir = await api.selectDirectory();
-  if (dir) dirInput.value = dir;
+  if (dir) {
+    dirInput.value = dir;
+    syncSaveButtons();
+  }
 });
+
+function parseExtensions(value) {
+  return value
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+}
 
 startSyncBtn.addEventListener("click", async () => {
   const dir = dirInput.value.trim();
@@ -328,10 +342,7 @@ startSyncBtn.addEventListener("click", async () => {
     return;
   }
 
-  const extensions = extensionsInput.value
-    .split(",")
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
+  const extensions = parseExtensions(extensionsInput.value);
 
   startSyncBtn.disabled = true;
   startSyncBtn.textContent = "starting…";
@@ -363,6 +374,50 @@ stopSyncBtn.addEventListener("click", async () => {
 refreshFilesBtn.addEventListener("click", refreshDocuments);
 
 // ---------------------------------------------------------------------------
+// settings save (sync folder / file types)
+// ---------------------------------------------------------------------------
+
+// shows the save buttons only while the folder or file types differ from what
+// is currently saved/active.
+function syncSaveButtons() {
+  const dirChanged = dirInput.value.trim() !== savedDir;
+  saveDirBtn.classList.toggle("hidden", !dirChanged);
+
+  const extChanged =
+    extensionsInput.value.trim().toLowerCase() !== savedExtensions.toLowerCase();
+  saveExtensionsBtn.classList.toggle("hidden", !extChanged);
+}
+
+async function saveSettings() {
+  const dir = dirInput.value.trim();
+  if (!dir) {
+    const msg = "choose a folder first";
+    addLog("error: " + msg, "error");
+    showError(msg);
+    return;
+  }
+
+  const extensions = parseExtensions(extensionsInput.value);
+  const result = await api.saveSettings({ dir, extensions });
+  if (!result.ok) {
+    addLog(result.error, "error");
+    setStatus("error", result.error);
+    return;
+  }
+
+  savedDir = dir;
+  savedExtensions = extensions.join(",");
+  extensionsInput.value = savedExtensions;
+  syncSaveButtons();
+  addLog("synced: settings saved", "synced");
+  refreshDocuments();
+}
+
+saveDirBtn.addEventListener("click", saveSettings);
+saveExtensionsBtn.addEventListener("click", saveSettings);
+extensionsInput.addEventListener("input", syncSaveButtons);
+
+// ---------------------------------------------------------------------------
 // live events from the main process
 // ---------------------------------------------------------------------------
 
@@ -372,10 +427,16 @@ api.onLog(({ message }) => {
   addLog(message, isError ? "error" : isSynced ? "synced" : "");
 });
 
-api.onWatcherStarted(({ rootDir }) => {
+api.onWatcherStarted(({ rootDir, extensions }) => {
   watching = true;
   setStatus("watching", `watching`);
   dirInput.value = rootDir;
+  savedDir = rootDir;
+  if (extensions?.length) {
+    savedExtensions = extensions.join(",");
+    extensionsInput.value = savedExtensions;
+  }
+  syncSaveButtons();
   startSyncBtn.classList.add("hidden");
   stopSyncBtn.classList.remove("hidden");
   addLog("watching: changes");
@@ -574,6 +635,15 @@ function formatTime(iso) {
     if (saved.watchDir) {
       dirInput.value = saved.watchDir;
     }
+    const configExtensions = (saved.extensions ?? []).join(",");
+    if (configExtensions) {
+      extensionsInput.value = configExtensions;
+    }
+
+    // seed the "last saved" baselines so no save buttons show until something
+    // actually changes.
+    savedDir = dirInput.value.trim();
+    savedExtensions = extensionsInput.value.trim();
 
     const restored = await api.restoreSession();
     setActiveView("activity");
@@ -603,12 +673,14 @@ async function syncUiFromMain() {
   if (status.watching) {
     watching = true;
     dirInput.value = status.watchDir ?? dirInput.value;
+    savedDir = dirInput.value.trim();
     startSyncBtn.classList.add("hidden");
     stopSyncBtn.classList.remove("hidden");
     setStatus("watching", "watching");
   } else {
     resetToIdle();
   }
+  syncSaveButtons();
 }
 
 initTheme();

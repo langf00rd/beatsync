@@ -568,6 +568,28 @@ ipcMain.handle("sync:stop", async () => {
   return { ok: true };
 });
 
+// persists a settings change (sync folder / file types). if a watch is already
+// running it is restarted with the new settings; otherwise the new values are
+// just saved so the next "start watching" (or auto-resume) picks them up.
+ipcMain.handle("settings:save", async (_event, { dir, extensions }) => {
+  try {
+    if (!dir) throw new Error("choose a folder first.");
+    if (!fs.existsSync(dir)) {
+      throw new Error("that folder no longer exists. please pick it again.");
+    }
+    const extList = extensions?.length ? extensions : CONFIG.defaultExtensions;
+
+    if (watcher) {
+      await startWatchingFlow({ dir, extensions: extList });
+    } else {
+      saveState({ watchDir: dir, extensions: extList });
+    }
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
+
 ipcMain.handle("sync:listDocuments", async () => {
   try {
     if (!supabase || !userId) return { ok: true, documents: [] };

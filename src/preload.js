@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld("beatsync", {
   getSyncStatus: () => ipcRenderer.invoke("sync:getStatus"),
   listDocuments: () => ipcRenderer.invoke("sync:listDocuments"),
   getConfig: () => ipcRenderer.invoke("config:get"),
+  saveSettings: (options) => ipcRenderer.invoke("settings:save", options),
 
   selectDirectory: () => ipcRenderer.invoke("dialog:selectDirectory"),
 
