@@ -17,5 +17,5 @@ for (const arch of ["x64", "arm64"]) {
   run(`codesign --force --deep --sign - "${apps[arch]}"`);
 }
 
-run(`electron-builder --mac dmg --x64 --prepackaged "${apps.x64}"`);
-run(`electron-builder --mac dmg --arm64 --prepackaged "${apps.arm64}"`);
+run(`electron-builder --mac dmg --x64 --prepackaged "${apps.x64}" --publish never`);
+run(`electron-builder --mac dmg --arm64 --prepackaged "${apps.arm64}" --publish never`);
