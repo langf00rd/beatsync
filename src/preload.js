@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld("beatsync", {
   saveSettings: (options) => ipcRenderer.invoke("settings:save", options),
 
   selectDirectory: () => ipcRenderer.invoke("dialog:selectDirectory"),
+  resetApp: () => ipcRenderer.invoke("app:reset"),
 
   encryption: {
     getStatus: () => ipcRenderer.invoke("encryption:getStatus"),

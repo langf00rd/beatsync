@@ -133,8 +133,8 @@ const appIconPath = () => path.join(__dirname, "..", "assets", "logo.png");
 function buildTrayMenu() {
   const watching = !!watcher;
   const statusLabel = watching
-    ? `running — watching ${watchDir}`
-    : "running — not watching";
+    ? `running, watching ${watchDir}`
+    : "running, not watching";
 
   const items = [{ label: statusLabel, enabled: false }, { type: "separator" }];
 
@@ -167,8 +167,8 @@ function updateTrayMenu() {
 
 function watchingLabel() {
   return watcher
-    ? `beatsync — watching ${watchDir}`
-    : "beatsync — not watching";
+    ? `beatsync, watching ${watchDir}`
+    : "beatsync, not watching";
 }
 
 function createTray() {
@@ -228,7 +228,7 @@ const sessionStorage = {
 function createAppClient() {
   if (!CONFIG.supabaseUrl || !CONFIG.supabaseAnonKey) {
     throw new Error(
-      "beatsync is not configured — it can't connect to the cloud without its " +
+      "beatsync is not configured, so it can't connect to the cloud without its " +
         "server credentials. please reinstall the latest version.",
     );
   }
@@ -239,7 +239,7 @@ function createAppClient() {
       autoRefreshToken: true,
       storage: sessionStorage,
     },
-    // electron bundles node 20, which has no native websocket — the realtime
+    // electron bundles node 20, which has no native websocket, so the realtime
     // client (created eagerly by supabase-js) needs one supplied via `ws`.
     realtime: { transport: WebSocket },
   });
@@ -328,7 +328,7 @@ function clearSession() {
   } catch { }
 }
 
-// the encryption key never touches supabase — it is stored encrypted by the
+// the encryption key never touches supabase; it is stored encrypted by the
 // os keychain (macOS keychain, windows dpapi, linux libsecret) via electron's
 // safeStorage, so the app can decrypt documents without the server ever
 // seeing the key or the plaintext.
@@ -388,7 +388,7 @@ async function storeKeyFingerprint(fp) {
 function keyCheckError(error) {
   if (error.code === "42703") {
     return new Error(
-      "the database is missing the encryption key column — run the latest schema.sql in the supabase sql editor.",
+      "the database is missing the encryption key column. run the latest schema.sql in the supabase sql editor.",
     );
   }
   return new Error(`failed to verify encryption key: ${error.message}`);
@@ -449,7 +449,7 @@ async function startWatchingFlow({ dir, extensions }) {
   }
   if (!encryptionKey) {
     throw new Error(
-      "no encryption key set — generate or paste one in the encryption section first.",
+      "no encryption key set. generate or paste one in the encryption section first.",
     );
   }
 
@@ -461,7 +461,7 @@ async function startWatchingFlow({ dir, extensions }) {
   if (storedFp && storedFp !== fp) {
     throw new Error(
       "this device's encryption key doesn't match the one that encrypted your documents. " +
-      "to read and write your documents, you need the original key — a new key can't open them.",
+      "to read and write your documents, you need the original key. a new key can't open them.",
     );
   }
 
@@ -528,6 +528,19 @@ ipcMain.handle("auth:signOut", async () => {
   supabase = null;
   userId = null;
   syncClient = null;
+  watchDir = null;
+  return { ok: true };
+});
+
+ipcMain.handle("app:reset", async () => {
+  if (watcher) stopWatching();
+  syncClient = null;
+  clearEncryptionKey();
+  encryptionKey = null;
+  saveState({});
+  clearSession();
+  supabase = null;
+  userId = null;
   watchDir = null;
   return { ok: true };
 });
@@ -603,7 +616,7 @@ ipcMain.handle("sync:listDocuments", async () => {
       return {
         ok: false,
         error:
-          "no encryption key set — nothing can be read or written until a key is set in the encryption section.",
+          "no encryption key set. nothing can be read or written until a key is set in the encryption section.",
       };
     }
     const { data, error } = await supabase

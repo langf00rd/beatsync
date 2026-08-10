@@ -14,6 +14,7 @@ const authError = $("auth-error");
 const authSubmit = $("auth-submit");
 const tabs = document.querySelectorAll(".tab");
 const signOutBtn = $("sign-out");
+const resetAppBtn = $("reset-app");
 const dirInput = $("dir-input");
 const chooseDirBtn = $("choose-dir");
 const saveDirBtn = $("save-dir");
@@ -24,6 +25,16 @@ const saveExtensionsBtn = $("save-extensions");
 const syncState = $("sync-state");
 const syncLabel = $("sync-label");
 const syncMeta = $("sync-meta");
+const setupDialog = $("setup-dialog");
+const setupStepCount = $("setup-step-count");
+const setupBackBtn = $("setup-back");
+const setupNextBtn = $("setup-next");
+const setupKeyInput = $("setup-key-input");
+const setupKeyGenerateBtn = $("setup-key-generate");
+const setupKeyWarning = $("setup-key-warning");
+const setupFolderBtn = $("goto-folder");
+const setupFolderLabel = $("setup-folder-label");
+const setupSummary = $("setup-summary");
 const logBox = $("log-box");
 const refreshFilesBtn = $("refresh-files");
 const filesEmpty = $("files-empty");
@@ -54,6 +65,7 @@ let documents = [];
 let activeView = "activity";
 let savedDir = "";
 let savedExtensions = "";
+let setupStep = 1;
 
 const THEME_STORAGE_KEY = "beatsync-theme";
 const themeOptions = document.querySelectorAll("[data-theme-option]");
@@ -98,6 +110,10 @@ function setActiveView(viewName) {
   contentViews.forEach((view) => {
     view.classList.toggle("hidden", view.id !== `view-${viewName}`);
   });
+
+  if (viewName === "activity") {
+    showSetupDialog();
+  }
 }
 
 function setUserEmail(email) {
@@ -105,6 +121,128 @@ function setUserEmail(email) {
   userEmail.textContent = email
     ? `Signed in as ${email}`
     : "Sign in to sync your files.";
+}
+
+function hasEncryptionKey() {
+  return encStatus?.dataset.state === "saved";
+}
+
+function hasSyncFolder() {
+  return Boolean(dirInput.value.trim());
+}
+
+function renderSetupStep(step) {
+  setupStep = step;
+
+  for (let s = 1; s <= 3; s++) {
+    const body = $("setup-step-" + s);
+    if (body) body.classList.toggle("visible", s === step);
+
+    const circle = $("setup-c" + s);
+    if (circle) {
+      const done = s < step;
+      circle.classList.toggle("done", done);
+      circle.classList.toggle("active", s === step);
+      circle.textContent = done ? "✓" : s === 1 ? "" : String(s);
+    }
+
+    const line = $("setup-l" + s);
+    if (line) line.classList.toggle("done", s < step);
+
+    const label = $("setup-lb" + s);
+    if (label) {
+      label.classList.toggle("done", s < step);
+      label.classList.toggle("active", s === step);
+    }
+  }
+
+  if (setupStepCount) setupStepCount.textContent = `Step ${step} of 3`;
+  if (setupBackBtn) setupBackBtn.classList.toggle("hidden", step === 1);
+
+  if (setupNextBtn) setupNextBtn.disabled = false;
+  if (step === 1) {
+    if (hasEncryptionKey()) {
+      setupNextBtn.textContent = "Continue";
+      if (setupKeyInput) {
+        setupKeyInput.value = "";
+        setupKeyInput.disabled = true;
+        setupKeyInput.placeholder = "encryption key already saved";
+      }
+      if (setupKeyGenerateBtn) setupKeyGenerateBtn.classList.add("hidden");
+      if (setupKeyWarning) setupKeyWarning.classList.add("hidden");
+    } else {
+      setupNextBtn.textContent = "Save & continue";
+      if (setupKeyInput) {
+        setupKeyInput.disabled = false;
+        setupNextBtn.disabled = !setupKeyInput.value.trim();
+      }
+      if (setupKeyGenerateBtn) setupKeyGenerateBtn.classList.remove("hidden");
+    }
+  } else if (step === 2) {
+    setupNextBtn.textContent = "Continue";
+    setupNextBtn.disabled = !hasSyncFolder();
+    if (setupFolderBtn) setupFolderBtn.classList.toggle("chosen", hasSyncFolder());
+    if (setupFolderLabel) {
+      setupFolderLabel.textContent = hasSyncFolder()
+        ? dirInput.value
+        : "Choose folder…";
+    }
+  } else if (step === 3) {
+    setupNextBtn.textContent = "Start watching";
+    renderSetupSummary();
+  }
+}
+
+function resetSetupKeyUi() {
+  if (setupKeyInput) {
+    setupKeyInput.value = "";
+    setupKeyInput.disabled = false;
+    setupKeyInput.placeholder = "Paste your encryption key";
+  }
+  if (setupKeyGenerateBtn) setupKeyGenerateBtn.classList.remove("hidden");
+  if (setupKeyWarning) setupKeyWarning.classList.add("hidden");
+}
+
+function renderSetupSummary() {
+  if (!setupSummary) return;
+  setupSummary.innerHTML = "";
+
+  const keyLine = document.createElement("div");
+  keyLine.appendChild(document.createTextNode("Encryption key "));
+  const keyStrong = document.createElement("strong");
+  keyStrong.textContent = "saved";
+  keyLine.appendChild(keyStrong);
+
+  const folderLine = document.createElement("div");
+  folderLine.appendChild(document.createTextNode("Folder "));
+  const folderStrong = document.createElement("strong");
+  folderStrong.textContent = dirInput.value || "-";
+  folderLine.appendChild(folderStrong);
+
+  setupSummary.append(keyLine, folderLine);
+}
+
+function updateSetupDialog() {
+  if (!setupDialog) return;
+  if (setupDialog.classList.contains("hidden")) return;
+  renderSetupStep(setupStep);
+}
+
+function showSetupDialog() {
+  if (!setupDialog) return;
+
+  if (hasEncryptionKey() && hasSyncFolder()) {
+    hideSetupDialog();
+    return;
+  }
+
+  resetSetupKeyUi();
+  renderSetupStep(hasEncryptionKey() ? 2 : 1);
+  setupDialog.classList.remove("hidden");
+}
+
+function hideSetupDialog() {
+  setupDialog?.classList.add("hidden");
 }
 
 function updateSummary() {
@@ -118,9 +256,9 @@ function updateSummary() {
     return doc.updated_at > latest ? doc.updated_at : latest;
   }, "");
 
-  statFiles.textContent = trackedCount > 0 ? trackedCount : "—";
-  statSize.textContent = trackedCount > 0 ? formatBytes(totalSize) : "—";
-  statLast.textContent = lastUpdated ? formatTime(lastUpdated) : "—";
+  statFiles.textContent = trackedCount > 0 ? trackedCount : "-";
+  statSize.textContent = trackedCount > 0 ? formatBytes(totalSize) : "-";
+  statLast.textContent = lastUpdated ? formatTime(lastUpdated) : "-";
 
   if (sidebarBadge) {
     sidebarBadge.textContent = trackedCount > 0 ? String(trackedCount) : "";
@@ -140,7 +278,7 @@ function showAuth() {
 function showMain() {
   authView.classList.add("hidden");
   mainView.classList.remove("hidden");
-  initEncryption();
+  initEncryption().then(() => showSetupDialog());
   refreshDocuments();
 }
 
@@ -192,7 +330,7 @@ authForm.addEventListener("submit", async (e) => {
     const result = await withTimeout(
       authMode === "signup" ? api.signUp(credentials) : api.signIn(credentials),
       20000,
-      "the request timed out — check your internet connection and try again.",
+      "the request timed out, check your internet connection and try again.",
     );
 
     if (!result.ok) {
@@ -231,9 +369,53 @@ signOutBtn.addEventListener("click", async () => {
   showAuth();
 });
 
+resetAppBtn?.addEventListener("click", async () => {
+  if (
+    !window.confirm(
+      "Reset beatsync? This clears your local encryption key, sync folder, and stored app state, then signs you out.",
+    )
+  ) {
+    return;
+  }
+
+  const result = await api.resetApp();
+  if (!result.ok) {
+    showError(result.error || "failed to reset the app. please try again.");
+    return;
+  }
+
+  resetToIdle();
+  dirInput.value = "";
+  savedDir = "";
+  savedExtensions = "";
+  extensionsInput.value = ".fountain";
+  syncSaveButtons();
+  setEncStatus("none");
+  encClearBtn?.classList.add("hidden");
+  setUserEmail("");
+  authMode = "signin";
+  tabs.forEach((tab) => {
+    tab.classList.toggle("active", tab.dataset.tab === "signin");
+  });
+  nameFields.classList.add("hidden");
+  authSubmit.textContent = "sign in";
+  authForm.reset();
+  showAuth();
+});
+
 // ---------------------------------------------------------------------------
 // encryption
 // ---------------------------------------------------------------------------
+
+function setEncStatus(state) {
+  const labels = {
+    none: "no key",
+    saved: "key saved",
+    mismatch: "key mismatch",
+  };
+  encStatus.dataset.state = state;
+  encStatusText.textContent = labels[state] ?? "no key";
+}
 
 async function initEncryption() {
   const { hasKey, matches } = await api.encryption.getStatus();
@@ -245,19 +427,7 @@ async function initEncryption() {
     setEncStatus("saved");
   }
   encClearBtn.classList.toggle("hidden", !hasKey);
-}
-
-function setEncStatus(state) {
-  if (state === "saved") {
-    encStatus.dataset.state = "ok";
-    encStatusText.textContent = "key saved";
-  } else if (state === "mismatch") {
-    encStatus.dataset.state = "error";
-    encStatusText.textContent = "key mismatch — enter your key";
-  } else {
-    encStatus.dataset.state = "idle";
-    encStatusText.textContent = "no key";
-  }
+  updateSetupDialog();
 }
 
 encGenerateBtn.addEventListener("click", async () => {
@@ -311,6 +481,7 @@ encClearBtn.addEventListener("click", async () => {
   await api.encryption.clear();
   encClearBtn.classList.add("hidden");
   setEncStatus("none");
+  updateSetupDialog();
   addLog("synced: key cleared", "synced");
 });
 
@@ -323,6 +494,7 @@ chooseDirBtn.addEventListener("click", async () => {
   if (dir) {
     dirInput.value = dir;
     syncSaveButtons();
+    updateSetupDialog();
   }
 });
 
@@ -363,6 +535,7 @@ startSyncBtn.addEventListener("click", async () => {
     addLog(`synced: pulled ${result.pulled} files`, "synced");
   }
   refreshDocuments();
+  hideSetupDialog();
 });
 
 stopSyncBtn.addEventListener("click", async () => {
@@ -394,7 +567,7 @@ async function saveSettings() {
     const msg = "choose a folder first";
     addLog("error: " + msg, "error");
     showError(msg);
-    return;
+    return false;
   }
 
   const extensions = parseExtensions(extensionsInput.value);
@@ -402,20 +575,91 @@ async function saveSettings() {
   if (!result.ok) {
     addLog(result.error, "error");
     setStatus("error", result.error);
-    return;
+    return false;
   }
 
   savedDir = dir;
   savedExtensions = extensions.join(",");
   extensionsInput.value = savedExtensions;
   syncSaveButtons();
+  updateSetupDialog();
   addLog("synced: settings saved", "synced");
   refreshDocuments();
+  return true;
 }
 
-saveDirBtn.addEventListener("click", saveSettings);
-saveExtensionsBtn.addEventListener("click", saveSettings);
-extensionsInput.addEventListener("input", syncSaveButtons);
+saveDirBtn.addEventListener("click", async () => {
+  await saveSettings();
+  updateSetupDialog();
+});
+saveExtensionsBtn.addEventListener("click", async () => {
+  await saveSettings();
+  updateSetupDialog();
+});
+extensionsInput.addEventListener("input", () => {
+  syncSaveButtons();
+  updateSetupDialog();
+});
+
+setupBackBtn?.addEventListener("click", () => {
+  if (setupStep > 1) renderSetupStep(setupStep - 1);
+});
+
+setupKeyGenerateBtn?.addEventListener("click", async () => {
+  const { key } = await api.encryption.generate();
+  setupKeyInput.value = key;
+  if (setupKeyWarning) setupKeyWarning.classList.remove("hidden");
+  renderSetupStep(1);
+});
+
+setupKeyInput?.addEventListener("input", () => {
+  if (setupKeyWarning) setupKeyWarning.classList.add("hidden");
+  renderSetupStep(1);
+});
+
+setupNextBtn?.addEventListener("click", async () => {
+  if (setupStep === 1) {
+    if (hasEncryptionKey()) {
+      renderSetupStep(hasSyncFolder() ? 3 : 2);
+      return;
+    }
+
+    const key = setupKeyInput?.value.trim();
+    if (!key) {
+      showError("enter or generate an encryption key first");
+      return;
+    }
+
+    setupNextBtn.disabled = true;
+    const result = await api.encryption.set(key);
+    if (!result.ok) {
+      showError(result.error);
+      setupNextBtn.disabled = false;
+      return;
+    }
+    await initEncryption();
+    refreshDocuments();
+    renderSetupStep(hasSyncFolder() ? 3 : 2);
+  } else if (setupStep === 2) {
+    if (!hasSyncFolder()) {
+      showError("choose a folder first");
+      return;
+    }
+    setupNextBtn.disabled = true;
+    const saved = await saveSettings();
+    setupNextBtn.disabled = false;
+    if (saved) renderSetupStep(3);
+  } else if (setupStep === 3) {
+    startSyncBtn.click();
+  }
+});
+
+setupFolderBtn?.addEventListener("click", async () => {
+  const dir = await api.selectDirectory();
+  if (!dir) return;
+  dirInput.value = dir;
+  renderSetupStep(2);
+});
 
 // ---------------------------------------------------------------------------
 // live events from the main process
@@ -440,11 +684,13 @@ api.onWatcherStarted(({ rootDir, extensions }) => {
   startSyncBtn.classList.add("hidden");
   stopSyncBtn.classList.remove("hidden");
   addLog("watching: changes");
+  hideSetupDialog();
 });
 
 api.onWatcherStopped(() => {
   watching = false;
   resetToIdle();
+  updateSetupDialog();
 });
 
 api.onDocUpdated(({ relativePath }) => {
@@ -530,6 +776,7 @@ function resetToIdle() {
   startSyncBtn.classList.remove("hidden");
   stopSyncBtn.classList.add("hidden");
   setStatus("idle", "not watching");
+  updateSetupDialog();
 }
 
 function addLog(message, className = "") {
@@ -607,7 +854,7 @@ function formatBytes(n) {
 }
 
 function formatTime(iso) {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const d = new Date(iso);
   const now = new Date();
   const diff = now - d;
@@ -681,6 +928,7 @@ async function syncUiFromMain() {
     resetToIdle();
   }
   syncSaveButtons();
+  updateSetupDialog();
 }
 
 initTheme();

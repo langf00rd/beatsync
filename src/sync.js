@@ -5,7 +5,7 @@ const enc = require("./crypto");
 const MAX_RETRIES = 3;
 const BASE_BACKOFF_MS = 500;
 
-// postgrest error codes that mean "retrying won't help" — a unique
+// postgrest error codes that mean "retrying won't help"; a unique
 // violation or an rls rejection is a logic problem, not a network blip.
 const NON_RETRYABLE_CODES = new Set(["23505", "42501"]);
 
@@ -44,7 +44,7 @@ class SupabaseSyncClient {
       throw new Error(`failed to list remote documents: ${error.message}`);
 
     // phase 1: decrypt every remote row up front. if the key is wrong we find
-    // out here, before anything is written — a wrong key must never write to
+    // out here, before anything is written; a wrong key must never write to
     // the cloud or overwrite local files.
     const rows = [];
     for (const doc of data ?? []) {
@@ -57,12 +57,12 @@ class SupabaseSyncClient {
           });
         } catch (err) {
           throw new Error(
-            `failed to decrypt ${doc.path} — the saved encryption key is wrong. ` +
+            `failed to decrypt ${doc.path}. the saved encryption key is wrong. ` +
             `changes won't sync until the correct key is set in the encryption section.`,
           );
         }
       } else {
-        // written before encryption existed — pull it as-is and re-encrypt
+        // written before encryption existed, so pull it as-is and re-encrypt
         // below so the server no longer stores it readable.
         rows.push({ doc, plaintext: doc.content, isLegacy: true });
       }

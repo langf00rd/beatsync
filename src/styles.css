@@ -1,7 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&display=swap");
 
 /* ============================================================
-   beatsync — macOS-style app shell
+   beatsync (macOS-style app shell)
    Monospace-first. System/CDS theme tokens. Hard edges.
    ============================================================ */
 
@@ -844,6 +844,281 @@ input[readonly] {
   color: var(--amber);
 }
 
+/* ── Setup wizard overlay ───────────────────────────────────── */
+
+.setup-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 50;
+  padding: 24px;
+}
+
+.setup-card {
+  width: min(440px, 100%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  /* border-radius: 14px; */
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2);
+}
+
+/* header */
+.setup-head {
+  padding: 24px 24px 0;
+}
+
+.setup-head h2 {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 3px;
+  letter-spacing: -0.01em;
+}
+
+.setup-sub {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+/* step track */
+.setup-track {
+  display: flex;
+  align-items: flex-start;
+  padding: 20px 24px 0;
+}
+
+.setup-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.setup-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 500;
+  flex-shrink: 0;
+  border: 1.5px solid var(--border-hi);
+  background: var(--surface-2);
+  color: var(--text-dim);
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.setup-circle .icon {
+  width: 12px;
+  height: 12px;
+}
+
+.setup-circle.active {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+}
+
+.setup-circle.done {
+  background: var(--green);
+  border-color: var(--green);
+  color: var(--bg);
+}
+
+.setup-line {
+  flex: 1;
+  height: 1.5px;
+  background: var(--border);
+  margin-top: 13px;
+  transition: background 0.3s;
+}
+
+.setup-line.done {
+  background: var(--green);
+}
+
+.setup-node-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.setup-node-label.active {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.setup-node-label.done {
+  color: var(--green);
+}
+
+/* step body */
+.setup-body {
+  padding: 20px 24px 4px;
+  min-height: 180px;
+}
+
+.setup-step {
+  display: none;
+}
+
+.setup-step.visible {
+  display: block;
+}
+
+.setup-step-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.setup-step-icon .icon {
+  width: 16px;
+  height: 16px;
+  color: var(--text-mid);
+}
+
+.setup-step-icon.success {
+  background: rgba(127, 186, 138, 0.12);
+  border-color: rgba(127, 186, 138, 0.3);
+}
+
+.setup-step-icon.success .icon {
+  color: var(--green);
+}
+
+.setup-step h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+  letter-spacing: -0.01em;
+}
+
+.setup-step p {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.55;
+  margin-bottom: 14px;
+}
+
+/* key field */
+.setup-key-field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.setup-key-field .btn {
+  align-self: flex-start;
+}
+
+/* warning */
+.setup-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--amber);
+  line-height: 1.4;
+  margin-top: 8px;
+}
+
+.setup-warning .icon {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* folder button */
+.setup-folder-btn {
+  width: 100%;
+  justify-content: flex-start;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 10px 12px;
+  font-size: 13px;
+}
+
+.setup-folder-btn.chosen {
+  color: var(--text);
+  border-color: var(--border-hi);
+}
+
+/* summary (step 3) */
+.setup-summary {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--text-mid);
+  line-height: 1.8;
+}
+
+.setup-summary strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* footer */
+.setup-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px 20px;
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+}
+
+.setup-step-count {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.setup-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* icon additions needed */
+.icon-alert {
+  mask-image: url("../assets/icons/alert.svg");
+  -webkit-mask-image: url("../assets/icons/alert.svg");
+}
+
+.icon-folder {
+  mask-image: url("../assets/icons/folder.svg");
+  -webkit-mask-image: url("../assets/icons/folder.svg");
+}
+
+.icon-folder-open {
+  mask-image: url("../assets/icons/folder-open.svg");
+  -webkit-mask-image: url("../assets/icons/folder-open.svg");
+}
+
+.icon-check {
+  mask-image: url("../assets/icons/check.svg");
+  -webkit-mask-image: url("../assets/icons/check.svg");
+}
+
 .setting-details {
   font-size: 12px;
 }
@@ -952,6 +1227,22 @@ input[readonly] {
 
 .status[data-state="ok"] .dot {
   background: var(--green);
+}
+
+.status[data-state="saved"] {
+  color: var(--green);
+}
+
+.status[data-state="saved"] .dot {
+  background: var(--green);
+}
+
+.status[data-state="mismatch"] {
+  color: var(--amber);
+}
+
+.status[data-state="mismatch"] .dot {
+  background: var(--amber);
 }
 
 .status[data-state="error"] {

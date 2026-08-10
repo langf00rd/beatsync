@@ -116,20 +116,113 @@
             </div>
           </div>
 
+          <!-- ── setup wizard (replaces #setup-dialog) ────────────────── -->
+          <div id="setup-dialog" class="setup-overlay hidden" role="dialog" aria-modal="true"
+            aria-labelledby="setup-dialog-title">
+            <div class="setup-card">
+
+              <!-- header -->
+              <div class="setup-head">
+                <h2 id="setup-dialog-title">Let's get you set up</h2>
+                <p class="setup-sub">Three quick steps, then you're done.</p>
+              </div>
+
+              <!-- step track -->
+              <div class="setup-track" aria-hidden="true">
+                <div class="setup-node">
+                  <div class="setup-circle active" id="setup-c1" data-step="1"></div>
+                  <span class="setup-node-label active" id="setup-lb1">Encryption</span>
+                </div>
+                <div class="setup-line" id="setup-l1"></div>
+                <div class="setup-node">
+                  <div class="setup-circle" id="setup-c2" data-step="2">2</div>
+                  <span class="setup-node-label" id="setup-lb2">Folder</span>
+                </div>
+                <div class="setup-line" id="setup-l2"></div>
+                <div class="setup-node">
+                  <div class="setup-circle" id="setup-c3" data-step="3">3</div>
+                  <span class="setup-node-label" id="setup-lb3">Watch</span>
+                </div>
+              </div>
+
+              <!-- step bodies -->
+              <div class="setup-body">
+
+                <!-- step 1: encryption -->
+                <div class="setup-step visible" id="setup-step-1">
+                  <div class="setup-step-icon">
+                    <span class="icon icon-key" aria-hidden="true"></span>
+                  </div>
+                  <h3>Set your encryption key</h3>
+                  <p>Your scripts are encrypted on this device before upload. Paste a key you already have, or
+                    generate a new one. If you generate one, save it somewhere safe. It can't be recovered if
+                    lost.</p>
+                  <div class="setup-key-field">
+                    <input type="text" id="setup-key-input" class="setting-input" placeholder="Paste your encryption key"
+                      autocomplete="off" spellcheck="false" />
+                    <button id="setup-key-generate" class="btn secondary icon-text-btn">
+                      <span class="icon icon-key" aria-hidden="true"></span>
+                      Generate key
+                    </button>
+                  </div>
+                  <p class="setup-warning hidden" id="setup-key-warning">
+                    <span class="icon icon-alert" aria-hidden="true"></span>
+                    Copy this key now. It won't be shown again after you continue.
+                  </p>
+                </div>
+
+                <!-- step 2: folder -->
+                <div class="setup-step" id="setup-step-2">
+                  <div class="setup-step-icon">
+                    <span class="icon icon-folder" aria-hidden="true"></span>
+                  </div>
+                  <h3>Choose your scripts folder</h3>
+                  <p>Point beatsync at the folder where Beat saves your .fountain files.</p>
+                  <button id="goto-folder" class="btn secondary icon-text-btn setup-folder-btn">
+                    <span class="icon icon-folder-open" aria-hidden="true"></span>
+                    <span id="setup-folder-label">Choose folder…</span>
+                  </button>
+                </div>
+
+                <!-- step 3: ready -->
+                <div class="setup-step" id="setup-step-3">
+                  <div class="setup-step-icon success">
+                    <span class="icon icon-check" aria-hidden="true"></span>
+                  </div>
+                  <h3>Ready to go</h3>
+                  <p>Encryption key saved and folder selected. Hit start and beatsync will back up every change
+                    automatically.</p>
+                  <div class="setup-summary" id="setup-summary"></div>
+                </div>
+
+              </div>
+
+              <!-- footer -->
+              <div class="setup-footer">
+                <span class="setup-step-count" id="setup-step-count">Step 1 of 3</span>
+                <div class="setup-actions">
+                  <button id="setup-back" class="btn ghost hidden">Back</button>
+                  <button id="setup-next" class="btn primary" disabled>Save &amp; continue</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
           <div class="view-body">
             <!-- stat cards -->
             <div class="stat-grid" id="stat-grid">
               <div class="stat-card">
                 <p class="stat-label">Tracked files</p>
-                <p class="stat-val" id="stat-files">—</p>
+                <p class="stat-val" id="stat-files">-</p>
               </div>
               <div class="stat-card">
                 <p class="stat-label">Total size</p>
-                <p class="stat-val" id="stat-size">—</p>
+                <p class="stat-val" id="stat-size">-</p>
               </div>
               <div class="stat-card">
                 <p class="stat-label">Last sync</p>
-                <p class="stat-val" id="stat-last">—</p>
+                <p class="stat-val" id="stat-last">-</p>
               </div>
             </div>
 
@@ -156,7 +249,7 @@
           <div class="view-body">
             <section class="panel" id="panel-files" style="padding-top:0;">
               <p id="files-empty" class="empty hidden">
-                No files yet — pick a folder in Settings and start watching.
+                No files yet. Pick a folder in Settings and start watching.
               </p>
               <table class="files" id="files-table">
                 <thead>
@@ -178,7 +271,7 @@
             <div class="settings-grid">
 
               <!-- sync folder -->
-              <div class="setting-block setting-block-folder">
+              <div class="setting-block setting-block-folder" id="sync-folder-section">
                 <div class="setting-header">
                   <h3 class="settings-heading">Sync folder</h3>
                 </div>
@@ -235,7 +328,7 @@
               </div>
 
               <!-- encryption -->
-              <div class="setting-block setting-block-encryption">
+              <div class="setting-block setting-block-encryption" id="encryption-section">
                 <div class="setting-header">
                   <h3 class="settings-heading">Encryption</h3>
                   <span id="enc-status" class="status" data-state="idle">
@@ -272,7 +365,7 @@
                   </div>
                   <div id="enc-generated" class="enc-generated hidden">
                     <p class="setting-desc warning">
-                      Copy this somewhere safe — it won't be shown again.
+                      Copy this somewhere safe. It won't be shown again.
                     </p>
                     <div class="field-stack">
                       <input type="text" id="enc-generated-value" class="setting-input" readonly />
@@ -292,6 +385,10 @@
                 <div class="setting-body">
                   <p class="setting-desc" id="user-email"></p>
                   <button id="sign-out" class="btn danger">Sign out</button>
+                  <button id="reset-app" class="btn ghost danger-text icon-text-btn" style="margin-top: 0.75rem;">
+                    <span class="icon icon-trash" aria-hidden="true"></span>
+                    Reset app
+                  </button>
                 </div>
               </div>
 

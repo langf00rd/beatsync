@@ -26,7 +26,7 @@ function normalizeKey(key) {
   }
   if (!buf) {
     throw new Error(
-      "invalid encryption key — it must be 32 bytes (use the generate button).",
+      "invalid encryption key. it must be 32 bytes (use the generate button).",
     );
   }
   return buf;

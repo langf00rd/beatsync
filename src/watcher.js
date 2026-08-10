@@ -113,7 +113,7 @@ class DirectoryWatcher extends EventEmitter {
       }
     } catch (err) {
       // a file can vanish between the debounce firing and the read (race
-      // with a delete/rename) — that's not a real failure, just a miss.
+      // with a delete/rename). that's not a real failure, just a miss.
       if (err.code === "ENOENT") return;
       this.logger.error(`error: sync ${relPath}: ${err.message}`);
     }
