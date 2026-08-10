@@ -226,6 +226,12 @@ const sessionStorage = {
 };
 
 function createAppClient() {
+  if (!CONFIG.supabaseUrl || !CONFIG.supabaseAnonKey) {
+    throw new Error(
+      "beatsync is not configured — it can't connect to the cloud without its " +
+        "server credentials. please reinstall the latest version.",
+    );
+  }
   return createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey, {
     fetch: timedFetch,
     auth: {
